@@ -151,8 +151,8 @@ class URLify {
 	/**
 	 * Initializes the character map.
 	 */
-	private static function init ($language = "") {
-		if (count (self::$map) > 0 && (($language == "") || ($language == self::$language))) {
+	private static function init ($language = '') {
+		if (count (self::$map) > 0 && (($language == '') || ($language == self::$language))) {
 			return;
 		}
 
@@ -204,15 +204,17 @@ class URLify {
 	 * $language specifies a priority for a specific language.
 	 * The latter is useful if languages have different rules for the same character.
 	 */
-	public static function downcode ($text, $language = "") {
+	public static function downcode ($text, $language = '') {
 		self::init ($language);
 
 		if (preg_match_all (self::$regex, $text, $matches)) {
-			for ($i = 0; $i < count ($matches[0]); $i++) {
+
+		    $counterMatches=count ($matches[0]);
+
+			for ($i = 0; $i < $counterMatches; $i++) {
 				$char = $matches[0][$i];
-				if (isset (self::$map[$char])) {
+				if (isset (self::$map[$char]) && strpos($text,$char)!==FALSE)
 					$text = str_replace ($char, self::$map[$char], $text);
-				}
 			}
 		}
 		return $text;
@@ -221,7 +223,7 @@ class URLify {
 	/**
 	 * Filters a string, e.g., "Petty theft" to "petty-theft"
 	 */
-	public static function filter ($text, $length = 60, $language = "", $file_name = false) {
+	public static function filter ($text, $length = 60, $language = '', $file_name = false) {
 		$text = self::downcode ($text,$language);
 
 		// remove all these words from the string before urlifying

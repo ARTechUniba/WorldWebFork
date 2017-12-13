@@ -10,13 +10,13 @@ $ajaxPage = false;
 if(isset($_GET['ajax']))
 	$ajaxPage = true;
 
-require(__DIR__.'/lib/common.php');
+require(__DIR__ . '/lib/common.php');
 
 $layout_crumbs = '';
 $layout_actionlinks = '';
 
 if (isset($_GET['forcelayout'])) {
-	setcookie('forcelayout', (int)$_GET['forcelayout'], time()+365*24*3600, URL_ROOT, "", false, true);
+	setcookie('forcelayout', (int)$_GET['forcelayout'], time()+365*24*3600, URL_ROOT, '', false, true);
 	die(header('Location: '.$_SERVER['HTTP_REFERER']));
 }
 
@@ -40,7 +40,7 @@ if(isset($argv)) {
 	$_GET = [];
 
 	$_SERVER = [];
-	$_SERVER["REMOTE_ADDR"] = "0.0.0.0";
+	$_SERVER['REMOTE_ADDR'] = '0.0.0.0';
 
 	$ajaxPage = true;
 	$useBuffering = false;
@@ -53,20 +53,20 @@ if(isset($argv)) {
 $match = $router->match();
 
 ob_start();
-$layout_crumbs = "";
+$layout_crumbs = '';
 
-if($useBuffering)
+if($useBuffering == true)
 	ob_start();
 
 $fakeerror = false;
 if ($loguser['flags'] & 0x2) {
 	if (rand(0,100) <= 75) {
-		Alert("Could not load requested page: failed to connect to the database. Try again later.", 'Error');
+		Alert('Could not load requested page: failed to connect to the database. Try again later.', 'Error');
 		$fakeerror = true;
 	}
 }
 
-if (!$fakeerror) {
+if ($fakeerror == false) {
 	try {
 		// Throw the 404 page if we don't have a match already.
 		if ($match === false)
@@ -82,8 +82,8 @@ if (!$fakeerror) {
 				$plugin = $pluginpages[$pageName];
 				$self = $plugins[$plugin];
 
-				$addonWWXD = __DIR__.'/plugins/'.$self['dir'].'/pages/'.$pageName.'.php';
-				$addonABXD = __DIR__.'/plugins/'.$self['dir'].'/page_'.$pageName.'.php';
+				$addonWWXD = __DIR__ . '/plugins/' .$self['dir'].'/pages/'.$pageName.'.php';
+				$addonABXD = __DIR__ . '/plugins/' .$self['dir'].'/page_'.$pageName.'.php';
 
 				if (file_exists($addonWWXD))
 					require_once($addonWWXD);
@@ -93,7 +93,7 @@ if (!$fakeerror) {
 					require_once(__DIR__.'/pages/404.php');
 			} else {
 				// Check now for core pages.
-				$page = __DIR__.'/pages/'.$pageName.'.php';
+				$page = __DIR__ . '/pages/' .$pageName.'.php';
 
 				if (file_exists($page))
 					require_once($page);
@@ -106,9 +106,9 @@ if (!$fakeerror) {
 	}
 }
 
-if($ajaxPage) {
-	if($useBuffering) {
-		header("Content-Type: text/plain");
+if($ajaxPage == true) {
+	if($useBuffering == true) {
+		header('Content-Type: text/plain');
 		ob_end_flush();
 	}
 	die();
@@ -118,21 +118,21 @@ $layout_contents = ob_get_contents();
 ob_end_clean();
 
 //Do these things only if it's not an ajax page.
-include(__DIR__."/lib/views.php");
+include(__DIR__ . '/lib/views.php');
 setLastActivity();
 
 //=======================
 // Panels and footer
 
-require(__DIR__.'/layouts/userpanel.php');
-require(__DIR__.'/layouts/menus.php');
+require(__DIR__ . '/layouts/userpanel.php');
+require(__DIR__ . '/layouts/menus.php');
 
 $mobileswitch = '';
 
-if (Settings::get('defaultLayout') !== "mobile") {
-	if ($mobileLayout) $mobileswitch .= 'Mobile view <noscript>(Requires JS enabled for it to work.)</noscript> - ';
+if (Settings::get('defaultLayout') !== 'mobile') {
+	if (isset($mobileLayout)) $mobileswitch .= 'Mobile view <noscript>(Requires JS enabled for it to work.)</noscript> - ';
 	if (isset($_COOKIE['forcelayout']) && $_COOKIE['forcelayout']) $mobileswitch .= '<a href="?forcelayout=0" rel="nofollow">Auto view</a>';
-	else if ($mobileLayout) $mobileswitch .= '<a href="?forcelayout=-1" rel="nofollow">Force normal view</a>';
+	else if (isset($mobileLayout)) $mobileswitch .= '<a href="?forcelayout=-1" rel="nofollow">Force normal view</a>';
 	else $mobileswitch .= '<a href="?forcelayout=1" rel="nofollow">Force mobile view [BETA]</a>';
 }
 
@@ -142,7 +142,7 @@ if (Settings::get('defaultLayout') !== "mobile") {
 $notifications = getNotifications();
 
 ob_start();
-$bucket = "userBar"; include("./lib/pluginloader.php");
+$bucket = 'userBar'; include('./lib/pluginloader.php');
 /*
 if($rssBar)
 {
@@ -153,7 +153,7 @@ if($rssBar)
 	</div>
 ", $rssBar, $rssWidth + 4);
 }*/
-$bucket = "topBar"; include("./lib/pluginloader.php");
+$bucket = 'topBar'; include('./lib/pluginloader.php');
 $layout_bars = ob_get_contents();
 ob_end_clean();
 
@@ -199,8 +199,8 @@ if (file_exists(URL_ROOT.'/themes/$theme/logo.png')) {
 
 function checkForImage(&$image, $external, $file) {
 	global $dataDir, $dataUrl;
-	if($image) return;
-	if($external) {
+	if(isset($image)) return;
+	if(isset($external)) {
 		if(file_exists($dataDir.$file))
 			$image = $dataUrl.$file;
 	} else {
@@ -209,12 +209,12 @@ function checkForImage(&$image, $external, $file) {
 	}
 }
 
-checkForImage($favicon, true, "logos/favicon.gif");
-checkForImage($favicon, true, "logos/favicon.ico");
-checkForImage($favicon, false, "img/favicon.ico");
+checkForImage($favicon, true, 'logos/favicon.gif');
+checkForImage($favicon, true, 'logos/favicon.ico');
+checkForImage($favicon, false, 'img/favicon.ico');
 
 $themefile = "themes/$theme/style.css";
-if(!file_exists(__DIR__.'/'.$themefile))
+if(!file_exists(__DIR__ . 'index.php/' .$themefile))
 	$themefile = "themes/$theme/style.php";
 
 
@@ -240,11 +240,11 @@ $perfdata = 'Page rendered in '.sprintf('%.03f',microtime(true)-$starttime).' se
 	<meta http-equiv="X-UA-Compatible" content="IE=10">
 	<meta name="description" content="<?php print $metaStuff['description']; ?>">
 	<meta name="keywords" content="<?php print $metaStuff['tags']; ?>">
-	<?php if ($mobileLayout) { ?>
+	<?php if (isset($mobileLayout)) { ?>
 		<meta name="viewport" content="user-scalable=yes, initial-scale=1.0, width=device-width">
 		<meta name="apple-mobile-web-app-capable" content="yes">
 		<script src="<?php echo resourceLink('js/mobile.js'); ?>"></script>
-		<?php if ($oldAndroid) { ?>
+		<?php if (isset($oldAndroid)) { ?>
 			<style>
 				#mobile-sidebar { height: auto!important; max-height: none!important; }
 				#realbody { max-height: none!important; max-width: none!important; overflow: scroll!important; }
@@ -272,7 +272,7 @@ $perfdata = 'Page rendered in '.sprintf('%.03f',microtime(true)-$starttime).' se
 	<script src="//code.jquery.com/ui/1.11.4/jquery-ui.js"></script>
 	<script src="//twemoji.maxcdn.com/twemoji.min.js"></script>
 
-	<?php $bucket = "pageHeader"; include(__DIR__."/lib/pluginloader.php"); ?>
+	<?php $bucket = 'pageHeader'; include(__DIR__ . '/lib/pluginloader.php'); ?>
 </head>
 <body style="width:100%; font-size: <?php echo $loguser['fontsize']; ?>%;">
 <form action="<?php echo htmlentities(pageLink('logout')); ?>" method="post" id="logout" style="display:none;"><input type="hidden" name="action" value="logout"></form>
@@ -307,6 +307,6 @@ $perfdata = 'Page rendered in '.sprintf('%.03f',microtime(true)-$starttime).' se
 </html>
 <?php
 
-$bucket = "finish"; include(__DIR__.'/lib/pluginloader.php');
+$bucket = 'finish'; include(__DIR__ . '/lib/pluginloader.php');
 
 ?>

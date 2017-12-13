@@ -321,17 +321,19 @@ class BrowserDetection
 			$compareVer[$k] = $this->parseInt($v);
 		}
 
-		if (count($sourceVer) != count($compareVer)) {
-			if (count($sourceVer) > count($compareVer)) {
-				for ($i = count($compareVer); $i < count($sourceVer); $i++) {
+        $counterCompareVer=count($compareVer);
+		$counterSourceVer= count($sourceVer);
+
+		if ($counterSourceVer != $counterCompareVer) {
+			if ($counterSourceVer > $counterCompareVer)
+
+				for ($i = $counterCompareVer; $i < $counterSourceVer; $i++)
 					$compareVer[$i] = 0;
-				}
-			} else {
-				for ($i = count($sourceVer); $i < count($compareVer); $i++) {
+
+			 else
+				for ($i = $counterSourceVer; $i < $counterCompareVer; $i++)
 					$sourceVer[$i] = 0;
-				}
-			}
-		}
+        }
 
 		foreach ($sourceVer as $i => $srcVerPart) {
 			if ($srcVerPart > $compareVer[$i]) {
@@ -968,7 +970,7 @@ class BrowserDetection
 			}
 		}
 
-		if ($found) {
+		if ($found == true) {
 			$this->setBrowser(self::BROWSER_NETSCAPE);
 			$this->setVersion($version);
 			$this->setMobile(false);
@@ -1046,13 +1048,13 @@ class BrowserDetection
 			$version = $this->getVersion();
 		}
 
-		if (!$found || $version == '') {
+		if ($found == false || $version == '') {
 			if ($this->checkSimpleBrowserUA('Opera', $this->_agent, self::BROWSER_OPERA)) {
 				return true;
 			}
 		}
 
-		if (!$found && $this->checkSimpleBrowserUA('Chrome', $this->_agent, self::BROWSER_CHROME) ) {
+		if ($found == false && $this->checkSimpleBrowserUA('Chrome', $this->_agent, self::BROWSER_CHROME) ) {
 			if ($this->checkSimpleBrowserUA('OPR/', $this->_agent, self::BROWSER_OPERA)) {
 				return true;
 			}
@@ -1139,20 +1141,20 @@ class BrowserDetection
 		}
 
 		//Safari 1-2 didn't had a "Version" string in the UA, only a WebKit build and/or Safari build, extract version from these...
-		if (!$found || $version == '') {
+		if ($found == false || $version == '') {
 			if (preg_match('/.*Safari[ (\/]*([a-z0-9.-]*)/i', $this->_agent, $matches)) {
 				$version = $this->safariBuildToSafariVer($matches[1]);
 				$found = true;
 			}
 		}
-		if (!$found || $version == '') {
+		if ($found  == false|| $version == '') {
 			if (preg_match('/.*AppleWebKit[ (\/]*([a-z0-9.-]*)/i', $this->_agent, $matches)) {
 				$version = $this->webKitBuildToSafariVer($matches[1]);
 				$found = true;
 			}
 		}
 
-		if ($found) {
+		if ($found == true) {
 			$this->setBrowser(self::BROWSER_SAFARI);
 			$this->setVersion($version);
 			$this->setMobile(false);
@@ -1540,6 +1542,7 @@ class BrowserDetection
 		$cleanVer = trim($cleanVer);
 		//Remove double spaces if any
 		while (strpos($cleanVer, '  ') !== false) {
+
 			$cleanVer = str_replace('  ', ' ', $cleanVer);
 		}
 
@@ -1634,7 +1637,10 @@ class BrowserDetection
 		$verParts = explode('.', $version);
 
 		//We need a 3 parts version (version 2 will becomes 2.0.0)
-		while (count($verParts) < 3) {
+
+        $counterVerParts=count($verParts);
+
+		while ($counterVerParts < 3) {
 			$verParts[] = 0;
 		}
 		foreach ($verParts as $i => $currPart) {
@@ -1829,7 +1835,10 @@ class BrowserDetection
 		$verParts = explode('.', $version);
 
 		//We need a 3 parts version (version 2 will becomes 2.0.0)
-		while (count($verParts) < 3) {
+
+        $counterVerParts=count($verParts);
+
+		while ($counterVerParts < 3) {
 			$verParts[] = 0;
 		}
 		foreach ($verParts as $i => $currPart) {
@@ -1938,7 +1947,10 @@ class BrowserDetection
 		//https://en.wikipedia.org/wiki/List_of_Microsoft_Windows_versions
 
 		$cleanWinVer = explode('.', $winVer);
-		while (count($cleanWinVer) > 2) {
+
+		$counterCleanWinVer=count($cleanWinVer);
+
+		while ($counterCleanWinVer > 2) {
 			array_pop($cleanWinVer);
 		}
 		$cleanWinVer = implode('.', $cleanWinVer);

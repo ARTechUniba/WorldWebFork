@@ -102,7 +102,7 @@ class Text_Diff_Engine_native {
                 $copy[] = $from_lines[$xi++];
                 ++$yi;
             }
-            if ($copy) {
+            if (isset($copy)) {
                 $edits[] = new Text_Diff_Op_copy($copy);
             }
 
@@ -119,9 +119,9 @@ class Text_Diff_Engine_native {
 
             if ($delete && $add) {
                 $edits[] = new Text_Diff_Op_change($delete, $add);
-            } elseif ($delete) {
+            } elseif (isset($delete)) {
                 $edits[] = new Text_Diff_Op_delete($delete);
-            } elseif ($add) {
+            } elseif (isset($add)) {
                 $edits[] = new Text_Diff_Op_add($add);
             }
         }
@@ -157,7 +157,7 @@ class Text_Diff_Engine_native {
                 = [$yoff, $ylim, $xoff, $xlim];
         }
 
-        if ($flip) {
+        if (isset($flip)) {
             for ($i = $ylim - 1; $i >= $yoff; $i--) {
                 $ymatches[$this->xv[$i]][] = $i;
             }
@@ -197,7 +197,8 @@ class Text_Diff_Engine_native {
                     }
                 }
 
-                while (list($junk, $y) = each($matches)) {
+                foreach($matches as $key => $val){
+
                     if ($y > $this->seq[$k - 1]) {
                         assert($y < $this->seq[$k]);
                         /* Optimization: this is a common case: next match is
@@ -328,7 +329,6 @@ class Text_Diff_Engine_native {
     {
         $i = 0;
         $j = 0;
-
         assert('count($lines) == count($changed)');
         $len = count($lines);
         $other_len = count($other_changed);
@@ -383,9 +383,8 @@ class Text_Diff_Engine_native {
                         $start--;
                     }
                     assert('$j > 0');
-                    while ($other_changed[--$j]) {
+                    while ($other_changed[--$j])
                         continue;
-                    }
                     assert('$j >= 0 && !$other_changed[$j]');
                 }
 
@@ -394,28 +393,7 @@ class Text_Diff_Engine_native {
                  * other file. CORRESPONDING == LEN means no such point has
                  * been found. */
                 $corresponding = $j < $other_len ? $i : $len;
-
-                /* Move the changed region forward, so long as the first
-                 * changed line matches the following unchanged one.  This
-                 * merges with following changed regions.  Do this second, so
-                 * that if there are no merges, the changed region is moved
-                 * forward as far as possible. */
-                while ($i < $len && $lines[$start] == $lines[$i]) {
-                    $changed[$start++] = false;
-                    $changed[$i++] = 1;
-                    while ($i < $len && $changed[$i]) {
-                        $i++;
-                    }
-
-                    assert('$j < $other_len && ! $other_changed[$j]');
-                    $j++;
-                    if ($j < $other_len && $other_changed[$j]) {
-                        $corresponding = $i;
-                        while ($j < $other_len && $other_changed[$j]) {
-                            $j++;
-                        }
-                    }
-                }
+                moveRegion($i, $len, $lines, $start, $other_len, $other_changed, $j);
             } while ($runlength != $i - $start);
 
             /* If possible, move the fully-merged run of changes back to a
@@ -424,12 +402,29 @@ class Text_Diff_Engine_native {
                 $changed[--$start] = 1;
                 $changed[--$i] = 0;
                 assert('$j > 0');
-                while ($other_changed[--$j]) {
-                    continue;
-                }
+                while ($other_changed[--$j]) continue;
                 assert('$j >= 0 && !$other_changed[$j]');
             }
         }
     }
 
+    /* Move the changed region forward, so long as the first
+     * changed line matches the following unchanged one.  This
+     * merges with following changed regions.  Do this second, so
+     * that if there are no merges, the changed region is moved
+     * forward as far as possible.
+     */
+    function moveRegion($i, $len, $lines, $start, $other_len, $other_changed, $j) {
+        while ($i < $len && $lines[$start] == $lines[$i]) {
+            $changed[$start++] = false;
+            $changed[$i++] = 1;
+            while ($i < $len && $changed[$i]) $i++;
+            assert('$j < $other_len && ! $other_changed[$j]');
+            $j++;
+            if ($j < $other_len && $other_changed[$j]) {
+                $corresponding = $i;
+                while ($j < $other_len && $other_changed[$j]) $j++;
+            }
+        }
+    }
 }

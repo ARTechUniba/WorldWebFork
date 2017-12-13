@@ -2,60 +2,60 @@
 if (!defined('BLARG')) die();
 
 $bbcodeCallbacks = [
-	"[b" => "bbcodeBold",
-	"[i" => "bbcodeItalics",
-	"[u" => "bbcodeUnderline",
-	"[s" => "bbcodeStrikethrough",
-	"[center" => "bbcodeCenter",
+	'[b' => 'bbcodeBold',
+	'[i' => 'bbcodeItalics',
+    '[u'=> 'bbcodeUnderline',
+	'[s' => 'bbcodeStrikethrough',
+	'[center' => 'bbcodeCenter',
 
-	"[url" => "bbcodeURL",
-	"[urlnf" => "bbcodeURLnf",
-	"[img" => "bbcodeImage",
-	"[imgs" => "bbcodeImageScale",
+	'[url' => 'bbcodeURL',
+	'[urlnf' => 'bbcodeURLnf',
+	'[img' => 'bbcodeImage',
+	'[imgs' => 'bbcodeImageScale',
 
-	"[user" => "bbcodeUser",
-	"[thread" => "bbcodeThread",
-	"[forum" => "bbcodeForum",
+	'[user' => 'bbcodeUser',
+	'[thread' => 'bbcodeThread',
+	'[forum' => 'bbcodeForum',
 
-	"[quote" => "bbcodeQuote",
-	"[reply" => "bbcodeReply",
+	'[quote' => 'bbcodeQuote',
+	'[reply' => 'bbcodeReply',
 
-	"[spoiler" => "bbcodeSpoiler",
-	"[code" => "bbcodeCode",
+	'[spoiler' => 'bbcodeSpoiler',
+	'[code' => 'bbcodeCode',
 
-	"[table" => "bbcodeTable",
-	"[tr" => "bbcodeTableRow",
-	"[trh" => "bbcodeTableRowHeader",
-	"[td" => "bbcodeTableCell",
+	'[table' => 'bbcodeTable',
+	'[tr' => 'bbcodeTableRow',
+	'[trh' => 'bbcodeTableRowHeader',
+	'[td' =>'bbcodeTableCell',
 
 	'[youtube' => 'bbcodeYoutube',
 	'[vidmeo' => 'bbcodeVidmeo',
 	'[gist' => 'bbcodeGist',
 
-	"[instameme" => "bbcodeMeme",
+	'[instameme' => 'bbcodeMeme',
 	
 	//Color BBCode Starts here
-	"[color"  => "bbcodecolordefault",
-	"[colour" => "bbcodecolourdefault",
-	"[purple" => "bbcodecolorpurple",
-	"[yellow" => "bbcodecoloryellow",
-	"[orange" => "bbcodecolororange",
-	"[violet" => "bbcodecolorviolet",
-	"[indigo" => "bbcodecolorindigo",
-	"[red"	=> "bbcodecolorred",
-	"[blue"   => "bbcodecolorblue",
-	"[bleu"   => "bbcodecolorbleu",
-	"[pink"   => "bbcodecolorpink",
-	"[green"  => "bbcodecolorgreen",
-	"[white"  => "bbcodecolorwhite",
-	"[black"  => "bbcodecolorblack",
-	"[rouge"  => "bbcodecolorrouge",
-	"[grey"   => "bbcodecolorgrey",
-	"[gray"   => "bbcodecolorgray",
+	'[color'  => 'bbcodecolordefault',
+	'[colour' => 'bbcodecolourdefault',
+	'[purple' => 'bbcodecolorpurple',
+	'[yellow' => 'bbcodecoloryellow',
+	'[orange' => 'bbcodecolororange',
+	'[violet' => 'bbcodecolorviolet',
+	'[indigo' => 'bbcodecolorindigo',
+	'[red'	=> 'bbcodecolorred',
+	'[blue'   => 'bbcodecolorblue',
+	'[bleu'   => 'bbcodecolorbleu',
+	'[pink'  => 'bbcodecolorpink',
+	'[green'  =>'bbcodecolorgreen',
+	'[white'  => 'bbcodecolorwhite',
+	'[black'  => 'bbcodecolorblack',
+	'[rouge'  => 'bbcodecolorrouge',
+	'[grey'   => 'bbcodecolorgrey',
+	'[gray'  => 'bbcodecolorgray',
 ];
 
 //Allow plugins to register their own callbacks (new bbcode tags)
-$bucket = "bbcode"; include(__DIR__."/pluginloader.php");
+$bucket = 'bbcode'; include(__DIR__.'/pluginloader.php');
 
 function bbcodeBold($contents, $arg, $parenttag)
 {
@@ -83,7 +83,7 @@ function bbcodeURL($contents, $arg, $parenttag)
 	$dest = htmlentities($contents);
 	$title = $contents;
 
-	if($arg)
+	if(isset($arg))
 		$dest = htmlentities($arg);
 
 	return '<a href="'.$dest.'">'.$title.'</a>';
@@ -93,7 +93,7 @@ function bbcodeURLnf($contents, $arg, $parenttag)
 	$dest = htmlentities($contents);
 	$title = $contents;
 
-	if($arg)
+	if(isset($arg))
 		$dest = htmlentities($arg);
 
 	return '<a href="'.$dest.'" rel="nofollow">'.$title.'</a>';
@@ -108,9 +108,8 @@ function bbcodeURLAuto($match) {
 function bbcodeImage($contents, $arg, $parenttag)
 {
 	$dest = $contents;
-	$title = "";
-	if($arg)
-	{
+	$title ='';
+    if(isset($arg))	{
 		$title = $contents;
 		$dest = $arg;
 	}
@@ -135,9 +134,8 @@ function bbcodeImageScale($contents, $arg, $parenttag)
 {
 	$dest = $contents;
 	$orig = $dest;
-	$title = "";
-	if($arg)
-	{
+	$title = '';
+    if(isset($arg))	{
 		$title = $contents;
 		$dest = $arg;
 		$orig = $dest;
@@ -168,14 +166,14 @@ function bbcodeThread($contents, $arg, $parenttag) {
 	global $threadLinkCache, $loguser;
 	$id = (int)$arg;
 	if(!isset($threadLinkCache[$id])) {
-		$rThread = Query("select t.id, t.title, t.forum from {threads} t where t.id={0} AND t.forum IN ({1c})", $id, ForumsWithPermission('forum.viewforum'));
+		$rThread = Query('select t.id, t.title, t.forum from {threads} t where t.id={0} AND t.forum IN ({1c})', $id, ForumsWithPermission('forum.viewforum'));
 		if(NumRows($rThread))
 		{
 			$thread = Fetch($rThread);
 			$threadLinkCache[$id] = makeThreadLink($thread);
 		}
 		else
-			$threadLinkCache[$id] = "&lt;invalid thread ID&gt;";
+			$threadLinkCache[$id] = '&lt;invalid thread ID&gt;';
 	}
 	return $threadLinkCache[$id];
 }
@@ -186,32 +184,32 @@ function bbcodeForum($contents, $arg, $parenttag)
 	$id = (int)$arg;
 	if(!isset($forumLinkCache[$id]))
 	{
-		$rForum = Query("select id, title from {forums} where id={0} AND id IN ({1c})", $id, ForumsWithPermission('forum.viewforum'));
+		$rForum = Query('select id, title from {forums} where id={0} AND id IN ({1c})', $id, ForumsWithPermission('forum.viewforum'));
 		if(NumRows($rForum))
 		{
 			$forum = Fetch($rForum);
-			$forumLinkCache[$id] = actionLinkTag($forum['title'], "forum", $forum['id'], '', HasPermission('forum.viewforum',$forum['id'],true)?$forum['title']:'');
+			$forumLinkCache[$id] = actionLinkTag($forum['title'], 'forum', $forum['id'], '', HasPermission('forum.viewforum',$forum['id'],true)?$forum['title']:'');
 		}
 		else
-			$forumLinkCache[$id] = "&lt;invalid forum ID&gt;";
+			$forumLinkCache[$id] = '&lt;invalid forum ID&gt;';
 	}
 	return $forumLinkCache[$id];
 }
 
 function bbcodeQuote($contents, $arg, $parenttag)
 {
-	return bbcodeQuoteGeneric($contents, $arg, __("Posted by"));
+	return bbcodeQuoteGeneric($contents, $arg, __('Posted by'));
 }
 
 function bbcodeReply($contents, $arg, $parenttag)
 {
-	return bbcodeQuoteGeneric($contents, $arg, __("Sent by"));
+	return bbcodeQuoteGeneric($contents, $arg, __('Sent by'));
 }
 
 function bbcodeQuoteGeneric($contents, $arg, $text)
 {
-	if(!$arg)
-		return "<div class='quote'><div class='quotecontent'>$contents</div></div>";
+    if(!isset($arg))
+        return "<div class='quote'><div class='quotecontent'>$contents</div></div>";
 
 	// Possible formats:
 	// [quote=blah]
@@ -221,7 +219,7 @@ function bbcodeQuoteGeneric($contents, $arg, $text)
 	{
 		$who = htmlspecialchars($match[1]);
 		$id = (int) $match[2];
-		return "<div class='quote'><div class='quoteheader'><a href=\"".htmlentities(actionLink("post", $id))."\">$text $who</a></div><div class='quotecontent'>$contents</div></div>";
+		return "<div class='quote'><div class='quoteheader'><a href=\"".htmlentities(actionLink('post', $id))."\">$text $who</a></div><div class='quotecontent'>$contents</div></div>";
 	}
 	else
 	{
@@ -233,8 +231,8 @@ function bbcodeQuoteGeneric($contents, $arg, $text)
 
 function bbcodeSpoiler($contents, $arg, $parenttag)
 {
-	if($arg)
-		return "<div class=\"spoiler\"><button class=\"spoilerbutton named\">".htmlspecialchars($arg)."</button><div class=\"spoiled hidden\">$contents</div></div>";
+    if(isset($arg))
+        return "<div class=\"spoiler\"><button class=\"spoilerbutton named\">".htmlspecialchars($arg)."</button><div class=\"spoiled hidden\">$contents</div></div>";
 	else
 		return "<div class=\"spoiler\"><button class=\"spoilerbutton\">Show spoiler</button><div class=\"spoiled hidden\">$contents</div></div>";
 }
@@ -303,11 +301,11 @@ function bbcodeYoutube($contents, $arg, $parenttag)
 {
 	$contents = trim($contents);
 	$id = getYoutubeIdFromUrl($contents);
-	if($id)
+	if(isset($id))
 		$contents = $id;
 
 	if(!preg_match("/^[\-0-9_a-zA-Z]+$/", $contents))
-		return "[Invalid youtube video ID]";
+		return '[Invalid youtube video ID]';
 
 	return '[youtube]'.$contents.'[/youtube]';
 }
@@ -336,11 +334,11 @@ function getVimeoIdFromUrl($url)
 function bbcodeVimeo($contents, $arg, $parenttag) {
 	$contents = trim($contents);
 	$id = getVimeoIdFromUrl($contents);
-	if($id)
+	if(isset($id))
 		$contents = $id;
 
 	if(!preg_match("/^[\-0-9_a-zA-Z]+$/", $contents))
-		return "[Invalid vimeo video ID]";
+		return '[Invalid vimeo video ID]';
 
 	return '[vimeo]'.$contents.'[/vimeo]';
 }
@@ -349,8 +347,8 @@ function bbcodeGist($contents, $arg) {
 	if (!function_exists('curl_init')) {
 		return "<a href=\"https://gist.github.com/$contents\">View $contents on GitHub</a>";
 	}
-	else if (!preg_match("/([0-9_a-zA-Z]+)\/([0-9a-f]+)/", $contents)) {
-		return "<pre><code>Invalid Gist</code></pre>";
+	else if (!preg_match('/([0-9_a-zA-Z]+)\/([0-9a-f]+)/', $contents)) {
+		return '<pre><code>Invalid Gist</code></pre>';
 	}
 	else {
 		$ch = curl_init();
@@ -413,28 +411,30 @@ function bbcodeColorgreen($contents, $arg, $parenttag)
 {
 	return "<div style=\"color: #008000;\">$contents</div>";
 }
-function bbcodeColorblue($contents, $arg, $parenttag)
-{
-	if ($arg == 'dark')
-		return "<div style=\"color: #00008B;\">$contents</div>";
-	elseif ($arg == 'light')
-		return "<div style=\"color: #ADD8E6;\">$contents</div>";
-	elseif ($arg == 'alice')
-		return "<div style=\"color: #F0F8FF;\">$contents</div>";
-	else
-		return "<div style=\"color: #0000FF;\">$contents</div>";
+
+function bbcodeColorblue($contents, $arg, $parenttag){
+
+	switch($arg){
+        case 'dark':
+            return "<div style=\"color: #00008B;\">$contents</div>";
+            break;
+
+        case 'light':
+            return "<div style=\"color: #ADD8E6;\">$contents</div>";
+            break;
+
+        case 'alice':
+            return "<div style=\"color: #F0F8FF;\">$contents</div>";
+            break;
+
+        default:
+            return "<div style=\"color: #0000FF;\">$contents</div>";
+            break;
+
+    }
 }
-function bbcodeColorbleu($contents, $arg, $parenttag)
-{
-	if ($arg == 'dark')
-		return "<div style=\"color: #00008B;\">$contents</div>";
-	elseif ($arg == 'light')
-		return "<div style=\"color: #ADD8E6;\">$contents</div>";
-	elseif ($arg == 'alice')
-		return "<div style=\"color: #F0F8FF;\">$contents</div>";
-	else
-		return "<div style=\"color: #0000FF;\">$contents</div>";
-}
+
+
 function bbcodeColorwhite($contents, $arg, $parenttag)
 {
 	return "<div style=\"color: #FFFFFF;\">$contents</div>";

@@ -1,11 +1,11 @@
 <?php
 if (!defined('BLARG')) die();
 
-require __DIR__."/permstrings.php";
+require __DIR__.'/permstrings.php';
 
 $usergroups = [];
 $grouplist = [];
-$res = Query("SELECT * FROM {usergroups} ORDER BY id");
+$res = Query('SELECT * FROM {usergroups} ORDER BY id');
 while ($g = Fetch($res)) {
 	$usergroups[$g['id']] = $g;
 	$grouplist[$g['id']] = $g['title'];
@@ -19,7 +19,7 @@ function LoadPermset($res) {
 		if ($perm['value'] == 0) continue;
 
 		$k = $perm['perm'];
-		if ($perm['arg']) $k .= '_'.$perm['arg'];
+		if (isset($perm['arg'])) $k .= '_'.$perm['arg'];
 
 		if ((isset($permord[$k]) && ($perm['ord'] > $permord[$k])) || (!isset($perms[$k]) || $perms[$k] != -1))
 			$perms[$k] = $perm['value'];
@@ -35,10 +35,10 @@ function LoadGroups() {
 	global $guestPerms, $guestGroup, $guestPermset;
 
 	$guestGroup = $usergroups[Settings::get('defaultGroup')];
-	$res = Query("SELECT *, 1 ord FROM {permissions} WHERE applyto=0 AND id={0} AND perm IN ({1c})", $guestGroup['id'], $guestPerms);
+	$res = Query('SELECT *, 1 ord FROM {permissions} WHERE applyto=0 AND id={0} AND perm IN ({1c})', $guestGroup['id'], $guestPerms);
 	$guestPermset = LoadPermset($res);
 
-	if (!$loguserid) {
+	if (!isset($loguserid)) {
 		$loguserGroup = $guestGroup;
 		$loguserPermset = $guestPermset;
 
@@ -50,13 +50,13 @@ function LoadGroups() {
 	$secgroups = [];
 	$loguserGroup = $usergroups[$loguser['primarygroup']];
 
-	$res = Query("SELECT groupid FROM {secondarygroups} WHERE userid={0}", $loguserid);
+	$res = Query('SELECT groupid FROM {secondarygroups} WHERE userid={0}', $loguserid);
 	while ($sg = Fetch($res)) $secgroups[] = $sg['groupid'];
 
-	$res = Query("	SELECT *, 1 ord FROM {permissions} WHERE applyto=0 AND id={0}
+	$res = Query('	SELECT *, 1 ord FROM {permissions} WHERE applyto=0 AND id={0}
 					UNION SELECT *, 2 ord FROM {permissions} WHERE applyto=0 AND id IN ({1c})
 					UNION SELECT *, 3 ord FROM {permissions} WHERE applyto=1 AND id={2}
-					ORDER BY ord",
+					ORDER BY ord',
 		$loguserGroup['id'], $secgroups, $loguserid);
 	$loguserPermset = LoadPermset($res);
 
@@ -77,8 +77,8 @@ function LoadGroups() {
 		$Iamowner = ($loguserGroup['id'] == Settings::get('rootGroup'));		//I am Root/Owner
 		$Iambanned = ($loguserGroup['id'] == Settings::get('bannedGroup'));		//I am banned
 		$myGroup = $usergroups[$loguser['primarygroup']];						//My Group
-		$Iamloggedin = $loguser["id"];											//I am logged in
-		$Iamnotloggedin = !$loguser["id"];										//I am not logged in
+		$Iamloggedin = $loguser['id'];											//I am logged in
+		$Iamnotloggedin = !$loguser['id'];										//I am not logged in
 	}
 }
 
@@ -99,7 +99,7 @@ function HasPermission($perm, $arg=0, $guest=false) {
 	// if it's set to revoke it revokes the general permission
 	if ($arg) {
 		$perm .= '_'.$arg;
-		if ($needspecific) {
+		if (isset($needspecific)) {
 			if (!isset($permset[$perm]) || $permset[$perm] != 1)
 				return false;
 		} else {
@@ -115,9 +115,9 @@ function CheckPermission($perm, $arg=0, $guest=false) {
 	global $loguserid, $loguser;
 
 	if (!HasPermission($perm, $arg, $guest)) {
-		if (!$loguserid)
+		if (!isset($loguserid))
 			Kill(__('You must be logged in to perform this action.'));
-		else if ($loguser['banned'])
+		else if (isset($loguser['banned']))
 			Kill(__('You may not perform this action because you are banned.'));
 		else
 			Kill(__('You may not perform this action.'));
@@ -147,7 +147,7 @@ function ForumsWithPermission($perm, $guest=false) {
 		return $ret;
 	}
 
-	$forumlist = Query("SELECT id FROM {forums}");
+	$forumlist = Query('SELECT id FROM {forums}');
 	$check = (bool)($permset[$perm] == 1);
 
 	// if the general permission is set to grant, we need to check for forums for which it'd be revoked
@@ -155,7 +155,7 @@ function ForumsWithPermission($perm, $guest=false) {
 	while ($forum = Fetch($forumlist)) {
 		if ($check && (isset($permset[$perm.'_'.$forum['id']]) && $permset[$perm.'_'.$forum['id']] != -1))
 			$ret[] = $forum['id'];
-		elseif (!$check && ((isset($permset[$perm.'_'.$forum['id']]) && $permset[$perm.'_'.$forum['id']] == 1)))
+		elseif (!isset($check) && ((isset($permset[$perm.'_'.$forum['id']]) && $permset[$perm.'_'.$forum['id']] == 1)))
 			$ret[] = $forum['id'];
 		// We're still checking if this exists but since the others failed, it's a neutral perm.
 		elseif (!isset($permset[$perm.'_'.$forum['id']]))
@@ -186,7 +186,7 @@ function GetUserPermissions($users, $perms=null) {
 	$groupusers = [];	// array of user IDs for each group
 
 	while ($g = Fetch($allgroups)) {
-		if ($g['type'])
+		if (isset($g['type']))
 			$secgroups[] = $g['gid'];
 		else
 			$primgroups[] = $g['gid'];
@@ -221,7 +221,7 @@ function GetUserPermissions($users, $perms=null) {
 		if ($p['value'] == 0) continue;
 
 		$k = $p['perm'];
-		if ($p['arg']) $k .= '_'.$p['arg'];
+		if (isset($p['arg'])) $k .= '_'.$p['arg'];
 
 		if ($p['applyto'] == 0) {	// group perm -- apply it to all the matching users
 			foreach ($groupusers[$p['id']] as $uid) {

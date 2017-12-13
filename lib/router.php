@@ -142,14 +142,16 @@ class AltoRouter {
 			foreach($matches as $match) {
 				list($block, $pre, $type, $param, $optional) = $match;
 
-				if ($pre) {
+				if (isset($pre)) {
 					$block = substr($block, 1);
 				}
 
-				if(isset($params[$param])) {
-					$url = str_replace($block, $params[$param], $url);
-				} elseif ($optional) {
-					$url = str_replace($pre . $block, '', $url);
+				if(isset($params[$param]) && strpos($url, $block)!==FALSE) {
+
+                   $url = str_replace($block, $params[$param], $url);
+				} elseif (isset($optional)) {
+				    if(strpos($url, $pre . $block)!==FALSE)
+					    $url = str_replace($pre . $block, '', $url);
 				}
 			}
 
@@ -194,7 +196,7 @@ class AltoRouter {
 			$method_match = (stripos($methods, $requestMethod) !== false);
 
 			// Method did not match, continue to next route.
-			if (!$method_match) continue;
+			if (!isset($method_match)) continue;
 
 			if ($route === '*') {
 				// * wildcard (matches all)
@@ -217,7 +219,7 @@ class AltoRouter {
 
 			if ($match) {
 
-				if ($params) {
+				if (isset($params)) {
 					foreach($params as $key => $value) {
 						if(is_numeric($key)) unset($params[$key]);
 					}
@@ -259,7 +261,8 @@ class AltoRouter {
 						. '))'
 						. ($optional !== '' ? '?' : null);
 
-				$route = str_replace($block, $pattern, $route);
+				if(strpos($route, $block)!==FALSE)
+				    $route = str_replace($block, $pattern, $route);
 			}
 
 		}

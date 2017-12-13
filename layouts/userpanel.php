@@ -3,7 +3,7 @@ if (!defined('BLARG')) die();
 
 $userMenu = [];
 
-if($loguserid) {
+if(isset($loguserid) && $loguserid == true) {
 	if (HasPermission('user.editprofile')) {
 		$userMenu[actionLink('editprofile')] = __('Edit profile');
 		if (HasPermission('user.editavatars'))
@@ -17,7 +17,7 @@ if($loguserid) {
 		$userMenu[pageLink('admin')] = __('Dashboard');
 }
 
-$bucket = 'userMenu'; include(__DIR__."/../lib/pluginloader.php");
+$bucket = 'userMenu'; include(__DIR__.'/../lib/pluginloader.php');
 
 $layout_userpanel = $userMenu;
 ?>
