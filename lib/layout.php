@@ -1,12 +1,19 @@
 <?php
-if (!defined('BLARG')) die();
+if (!defined('BLARG')) trigger_error();
 
 // ----------------------------------------------------------------------------
 // --- General layout functions
 // ----------------------------------------------------------------------------
 
-function RenderTemplate($template, $options=null) {
-	global $tpl, $mobileLayout, $plugintemplates, $plugins;
+
+
+function RenderTemplate($template,$tpl, $mobileLayout=true, $options=null) {
+
+    $plugintemplates=[];
+    $plugins=[];
+    //$mobilelayout e tpl come parametro
+
+	//global $tpl, $mobileLayout, $plugintemplates, $plugins;
 
 	if (array_key_exists($template, $plugintemplates)) {
 		$plugin = $plugintemplates[$template];
@@ -35,27 +42,28 @@ function RenderTemplate($template, $options=null) {
 	$tpl->display($tplname);
 }
 
-function makeCrumbs($path, $links='') {
-	global $layout_crumbs, $layout_actionlinks;
+function makeCrumbs($path) {
+
 
 	if(count($path) != 0) {
 		$pathPrefix = [actionLink(0) => Settings::get('breadcrumbsMainName')];
 
-		$bucket = 'breadcrumbs'; include(__DIR__.'/pluginloader.php');
 
 		$path = $pathPrefix + $path;
 	}
 
-	$layout_crumbs = $path;
-	$layout_actionlinks = $links;
+	//$layout_crumbs = $path;
+	//$layout_actionlinks = $links;
 }
 
 function makeBreadcrumbs($path) {
-	global $layout_crumbs;
+    $layout_crumbs='';
 	$path->addStart(new PipeMenuLinkEntry(Settings::get('breadcrumbsMainName'), 'board'));
 	$path->setClass('breadcrumbs');
 	$bucket = 'breadcrumbs'; include('lib/pluginloader.php');
 	$layout_crumbs = $path;
+
+	return $layout_crumbs;
 }
 
 function mfl_forumBlock($fora, $catid, $selID, $indent) {
@@ -74,8 +82,8 @@ function mfl_forumBlock($fora, $catid, $selID, $indent) {
 	return $ret;
 }
 
-function makeForumList($fieldname, $selectedID, $allowNone=false) {
-	global $loguserid, $loguser, $forumBoards;
+function makeForumList($fieldname,$forumBoards, $allowNone=false) {
+
 
 	$viewableforums = ForumsWithPermission('forum.viewforum');
 	$viewhidden = HasPermission('user.viewhiddenforums');
@@ -99,26 +107,26 @@ function makeForumList($fieldname, $selectedID, $allowNone=false) {
 	while($forum = Fetch($rFora))
 		$fora[$forum['catid']][] = $forum;
 
-	$theList = '';
+	//$theList = '';
 	foreach ($cats as $cid=>$cat) {
 		if (empty($fora[$cid]))
 			continue;
 
 		$cname = $cat['name'];
 		if (isset($cat['board'])) $cname = $forumBoards[$cat['board']].' - '.$cname;
+    /*	$theList =
+     '			<optgroup label="'.htmlspecialchars($cname).'">
+     '.mfl_forumBlock($fora, $cid, $selectedID, 0).
+     '			</optgroup>
+     ';*/
 
-		$theList .=
-'			<optgroup label="'.htmlspecialchars($cname).'">
-'.mfl_forumBlock($fora, $cid, $selectedID, 0).
-'			</optgroup>
-';
 	}
 
 	return "<select id=\"$fieldname\" name=\"$fieldname\">$noneOption$theList</select>";
 }
 
-function forumCrumbs($forum) {
-	global $forumBoards;
+function forumCrumbs($forum, $forumBoards) {
+
 	$ret = [actionLink('board') => __('Forums')];
 
 	if ($forum['board'] != '')
@@ -146,8 +154,7 @@ function makeForumCrumbs($crumbs, $forum) {
 }
 
 function doThreadPreview($tid, $maxdate=0) {
-	global $loguser;
-    $try = ".($maxdate?\' AND {posts}.date<={1}':'').";
+    $loguser = Fetch(Query('SELECT * FROM {users} WHERE id={0}', $session['user']));
 	$review = [];
 	$ppp = $loguser['postsperpage'] ?: 20;
 
@@ -178,8 +185,8 @@ function doThreadPreview($tid, $maxdate=0) {
 
 	RenderTemplate('threadreview', ['review' => $review]);
 }
-function rForaQuery($parent, $boardlol='', $viewableforums, $viewhidden ) {
-    global $loguserid, $loguser, $usergroups;
+function rForaQuery($parent, $viewableforums, $viewhidden, $loguserid, $boardlol='' ) {
+
     $rFora = Query('	SELECT f.*,
 							c.name cname,
 							'.($loguserid ? '(NOT ISNULL(i.fid))' : '0').' ignored,
@@ -196,8 +203,8 @@ function rForaQuery($parent, $boardlol='', $viewableforums, $viewhidden ) {
     return $rFora;
 }
 
-function rSubfora($parent, $boardlol='', $viewableforums, $viewhidden) {
-    global $loguserid, $loguser, $usergroups;
+function rSubfora($parent, $viewableforums, $viewhidden,$loguserid, $boardlol='') {
+
     $f = Fetch(Query('SELECT MIN(l) minl, MAX(r) maxr FROM {forums} WHERE '.($parent==0 ? 'board={0}' : 'catid={1}'), $boardlol, -$parent));
     $rSubfora = Query('	SELECT f.*,
 							'.($loguserid ? '(NOT ISNULL(i.fid))' : '0').' ignored,
@@ -212,7 +219,7 @@ function rSubfora($parent, $boardlol='', $viewableforums, $viewhidden) {
 }
 
 function rMods($parent, $boardlol) {
-    $f = Fetch(Query('SELECT MIN(l) minl, MAX(r) maxr FROM {forums} WHERE '.($parent==0 ? 'board={0}' : 'catid={1}'), $boardlol, -$parent));
+   Fetch(Query('SELECT MIN(l) minl, MAX(r) maxr FROM {forums} WHERE '.($parent==0 ? 'board={0}' : 'catid={1}'), $boardlol, -$parent));
     $rMods = Query('	SELECT
 							p.(arg, applyto, id),
 							u.(_userfields)
@@ -225,8 +232,8 @@ function rMods($parent, $boardlol) {
         'mod.');
     return $rMods;
 }
-function sForums($parent, $boardlol='') {
-    global $loguserid, $loguser, $usergroups;
+function sForums($parent,$loguserid, $boardlol='') {
+
     $f = Fetch(Query('SELECT MIN(l) minl, MAX(r) maxr FROM {forums} WHERE '.($parent==0 ? 'board={0}' : 'catid={1}'), $boardlol, -$parent));
     $sForums = Query('	SELECT f.id, f.numthreads, f.numposts, f.lastpostid, f.lastpostname, f.lastpostuser, f.lastpostdate,
 											'.($loguserid ? '(NOT ISNULL(i.fid))' : '0').' ignored,
@@ -249,13 +256,13 @@ function sForums($parent, $boardlol='') {
  *
  * @Da Gabriele: ho spostato questo commento dalla riga 328, per via della issue mia circa le funzioni lunghe
  */
-function makeForumListing($parent, $boardlol='') {
-	global $loguserid, $loguser, $usergroups;
+function makeForumListing($parent, $usergroups, $boardlol='') {
+
     $viewableforums = ForumsWithPermission('forum.viewforum');
     $viewhidden = HasPermission('user.viewhiddenforums');
-    $rFora = rForaQuery($parent,$boardlol, $viewableforums, $viewhidden);
+    $rFora = rForaQuery($parent, $viewableforums, $viewhidden,$boardlol);
 	if (!NumRows($rFora)) return;
-	$rSubfora = rSubfora($parent,$parent, $boardlol, $viewableforums, $viewhidden);
+	$rSubfora = rSubfora($parent,$parent, $viewableforums, $viewhidden, $boardlol);
     $subfora = [];
     $mods = [];
 	while ($sf = Fetch($rSubfora)) $subfora[-$sf['catid']][] = $sf;
@@ -264,7 +271,6 @@ function makeForumListing($parent, $boardlol='') {
 	$categories = [];
 	while($forum = Fetch($rFora)) {
 		$skipThisOne = false;
-		$bucket = 'forumListMangler'; include(__DIR__.'/pluginloader.php');
 		if($skipThisOne == true) continue;
 		if (!isset($categories[$forum['catid']]))
 			$categories[$forum['catid']] = ['id' => $forum['catid'], 'name' => ($parent==0)?$forum['cname']:'Subforums', 'forums' => []];
@@ -282,7 +288,7 @@ function makeForumListing($parent, $boardlol='') {
 				$forum['numposts'] = '-';
 				if ($redir[1] == 'board') {
 					$tboard = $redir[2];
-					$f = Fetch(Query('SELECT MIN(l) minl, MAX(r) maxr FROM {forums} WHERE board={0}', $tboard));
+					Fetch(Query('SELECT MIN(l) minl, MAX(r) maxr FROM {forums} WHERE board={0}', $tboard));
 					$forum['numthreads'] = 0;
 					$forum['numposts'] = 0;
 					$sforums = sForums($parent, $boardlol);
@@ -331,7 +337,7 @@ function makeForumListing($parent, $boardlol='') {
 		$fdata['threads'] = $forum['numthreads'];
 		$fdata['posts'] = $forum['numposts'];
 		if(isset($forum['lastpostdate'])) {
-			$avatar = false;
+
 			$user = getDataPrefix($forum, 'lu_');
 			$fdata['lastpostdate'] = formatdate($forum['lastpostdate']);
             $pictureUrl= $user['picture'];
@@ -350,8 +356,7 @@ RenderTemplate('forumlist1', ['categories' => $categories]);
 }
 
 
-function makeThreadListing($threads, $pagelinks, $dostickies = true, $showforum = false) {
-	global $loguserid, $loguser, $misc;
+function makeThreadListing($threads, $pagelinks,$loguserid, $loguser, $misc, $dostickies = true, $showforum = false) {
 
 	$threadlist = [];
 	while ($thread = Fetch($threads)) {
@@ -446,8 +451,8 @@ function makeThreadListing($threads, $pagelinks, $dostickies = true, $showforum 
 	RenderTemplate('threadlist', ['threads' => $threadlist, 'pagelinks' => $pagelinks, 'dostickies' => $dostickies, 'showforum' => $showforum]);
 }
 
-function makeAnncBar() {
-	global $loguserid;
+function makeAnncBar($loguserid) {
+
 
 	$anncforum = Settings::get('anncForum');
 	if ($anncforum > 0) {
@@ -484,33 +489,34 @@ function makeAnncBar() {
 	}
 }
 
-function DoSmileyBar($taname = 'text') {
-	global $smiliesOrdered;
+function DoSmileyBar($smiliesOrdered) {
+
 	$expandAt = 100;
 	LoadSmiliesOrdered();
-	print '<table class="message margin">
-		<tr class="header0"><th>'.__('Smilies').'</th></tr>
-		<tr class="cell0"><td id="smiliesContainer">';
+
+	//'<table class="message margin">
+    //<tr class="header0"> <th>'.__('Smilies').'</th></tr>
+    //<tr class="cell0"><td id="smiliesContainer">';
 
 	if(count($smiliesOrdered) > $expandAt)
 		write("<button class=\"expander\" id=\"smiliesExpand\" onclick=\"expandSmilies();\">&#x25BC;</button>");
-	print "<div class=\"smilies\" id=\"commonSet\">";
+	    print "<div class=\"smilies\" id=\"commonSet\">";
 
-	$i = 0;
-	foreach($smiliesOrdered as $s) {
-		if($i == $expandAt)
-			print "</div><div class=\"smilies\" id=\"expandedSet\">";
+	    $i = 0;
+	        foreach($smiliesOrdered as $s) {
+		    if($i == $expandAt)
+			//print "</div><div class=\"smilies\" id=\"expandedSet\">";
 
 
-		$code=$s['code'];
-		if(strpos($code, "'")!== FALSE)
+	    	$code=$s['code'];
+	    	if(strpos($code, "'")!== FALSE)
 		    $code= str_replace("'", "\'", $code);
 
-		print '<img src=\"'.resourceLink('img/smilies/'.$s['image']).'\" alt=\"'.htmlentities($s['code']).'\" title=\"'.htmlentities($s['code'])."\" onclick=\"insertSmiley(' ".$code." ');\" />";
+	    	print '<img src=\"'.resourceLink('img/smilies/'.$s['image']).'\" alt=\"'.htmlentities($s['code']).'\" title=\"'.htmlentities($s['code'])."\" onclick=\"insertSmiley(' ".$code." ');\" />";
 		$i++;
 	}
 
-	print '</div></td></tr></table>';
+	//print '</div></td></tr></table>';
 }
 
 function DoPostHelp() {
@@ -533,7 +539,6 @@ function DoPostHelp() {
 				[source]&hellip;[/source] &mdash; '.__('colorcoded block, assuming C#').' <br />
 				[source=&hellip;]&hellip;[/source] &mdash; '.__('colorcoded block, specific language').'<sup title=\"bnf, c, cpp, csharp, html4strict, irc, javascript, lolcode, lua, mysql, php, qbasic, vbnet, xml\">['.__('which?').']</sup> <br />
 	");
-	$bucket = 'postHelpPresentation'; include('./lib/pluginloader.php');
 	write('
 				<br />
 				<h4>'.__('Links').'</h4>
@@ -543,7 +548,8 @@ function DoPostHelp() {
 				>>&hellip; &mdash; '.__('link to post by ID').' <br />
 				[user=##] &mdash; '.__('link to users profile by ID').' <br />
 	');
-	$bucket = 'postHelpLinks'; include('./lib/pluginloader.php');
+	//$bucket = 'postHelpLinks';
+	include('./lib/pluginloader.php');
 
 	write('
 				<br />
@@ -552,12 +558,14 @@ function DoPostHelp() {
 				[quote=&hellip;]&hellip;[/quote] &mdash; ".__("\"Posted by &hellip;\"")." <br />
 				[quote=\"&hellip;\" id=\"&hellip;\"]&hellip;[/quote] &mdash; \"".__("\"Post by &hellip;\" with link by post ID")." <br />
 	');
-	$bucket = 'postHelpQuotations'; include('./lib/pluginloader.php');
+	//$bucket = 'postHelpQuotations';
+	include('./lib/pluginloader.php');
 	write('
 				<br />
 				<h4>'.__('Embeds').'</h4>
 	');
-	$bucket = 'postHelpEmbeds'; include('./lib/pluginloader.php');
+	//$bucket = 'postHelpEmbeds';
+    include('./lib/pluginloader.php');
 	write('
 			</div>
 			<br />

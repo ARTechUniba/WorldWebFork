@@ -1,5 +1,5 @@
 <?php
-if (!defined('BLARG')) die();
+if (!defined('BLARG')) trigger_error();
 
 // TODO make this work in templates at all
 // we'll consider it whenever there's enough demand.
@@ -12,16 +12,34 @@ include_once(__DIR__.'/lang/'.$language.'.php');
 if($language != 'en_US')
 	include_once(__DIR__.'/lang/'.$language.'_lang.php');
 
-function __($english, $flags = 0)
+// Funzione creata da Gabriele Pisciotta per bypassare vulnerabilità di SSRF
+function get_data()
+{
+    $ch = curl_init();
+    $timeout = 5;
+    curl_setopt($ch,CURLOPT_RETURNTRANSFER,1);
+    curl_setopt($ch,CURLOPT_CONNECTTIMEOUT,$timeout);
+    $data = curl_exec($ch);
+    curl_close($ch);
+    return $data;
+}
+
+/*risoluzione 9337:
+da    function __($english, $flags = 0)
 {
 	global $languagePack, $language;
+a  function __($english, $languagePack=null, $language=null, $flags = 0)
+From Giosh96  */
+
+function __($english, $languagePack=null, $language=null, $flags = 0)
+{
 	if($language != 'en_US')
 	{
 		if(!isset($languagePack))
 		{
 			if(is_file(__DIR__.'/lang/'.$language.'.txt'))
 			{
-				importLanguagePack(__DIR__.'/lang/'.$language.'.txt');
+				importLanguagePack();
 				importPluginLanguagePacks($language.'.txt');
 			}
 			else
@@ -47,10 +65,10 @@ function __($english, $flags = 0)
 	return $final	;
 }
 
-function importLanguagePack($file)
+function importLanguagePack()
 {
-	global $languagePack;
-	$f = file_get_contents($file);
+	$languagePack=[];
+	$f = get_data();
 	$f = explode("\n", $f);
 
 	$counterF=count($f);
@@ -66,11 +84,12 @@ function importLanguagePack($file)
 			continue;
 		$languagePack[$k] = $v;
 	}
+	return $languagePack;
 }
 
 function importPluginLanguagePacks($file)
-{
-	$pluginsDir = @opendir('plugins');
+{   error_reporting(0);
+	$pluginsDir = opendir('plugins');
 	if($pluginsDir !== FALSE)
 	while(($plugin = readdir($pluginsDir)) !== FALSE)
 	{
@@ -79,7 +98,7 @@ function importPluginLanguagePacks($file)
 		{
 			$foo = './plugins/'.$plugin.'/'.$file;
 			if(file_exists($foo))
-				importLanguagePack($foo);
+				importLanguagePack();
 		}
 	}
 }

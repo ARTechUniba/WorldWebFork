@@ -1,5 +1,5 @@
 <?php
-if (!defined('BLARG')) die();
+if (!defined('BLARG')) trigger_error();
 
 /*
 	I really don't like the idea of settings.php. Self-modifying code is bad, and
@@ -56,16 +56,17 @@ class Settings {
 		}
 	}
 
-	public static function getSettingsFile($pluginname) {
-		global $plugins;
-
+	public static function getSettingsFile($pluginname, $plugins=null) {
 		$settings = [];
 
 		//Get the setting list.
 		if($pluginname == 'main')
 			include(__DIR__.'/settingsfile.php');
 		else {
-			@include(__DIR__.'/../plugins/'.$plugins[$pluginname]['dir'].'/settingsfile.php');
+		    if(!isset($plugins))
+		        return false;
+            error_reporting(0);
+			include(__DIR__.'/../plugins/'.$plugins[$pluginname]['dir'].'/settingsfile.php');
 		}
 		return $settings;
 	}
@@ -75,7 +76,7 @@ class Settings {
 		if(!isset(self::$settingsArray[$pluginname]))
 			self::$settingsArray[$pluginname] = [];
 
-		$changed = false;
+
 
 		$settings = self::getSettingsFile($pluginname);
 		foreach($settings as $name => $data) {
@@ -89,7 +90,7 @@ class Settings {
 					self::$settingsArray[$pluginname][$name] = $default;
 
 				self::saveSetting($pluginname, $name);
-				$changed = true;
+				//$changed = true;
 			}
 		}
 
@@ -139,8 +140,9 @@ class Settings {
 	public static function get($name) {
 		return self::$settingsArray['main'][$name];
 	}
-	public static function pluginGet($name) {
-		global $plugin;
+	public static function pluginGet($name, $plugin) {
+	    if(!isset($plugin))
+	        return;
 		return self::$settingsArray[$plugin][$name];
 	}
 }

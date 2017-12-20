@@ -1,5 +1,5 @@
 <?php
-if (!defined('BLARG')) die();
+if (!defined('BLARG')) trigger_error();
 
 $pluginSettings = [];
 $plugins = [];
@@ -7,13 +7,15 @@ $pluginbuckets = [];
 $pluginpages = [];
 $plugintemplates = [];
 
-function registerSetting($settingname, $label, $check = false)
+function registerSetting()
 {
 	// TODO: Make this function.
 }
 
-function getSetting($settingname, $useUser = false) {
-	global $pluginSettings, $user;
+
+
+function getSetting($settingname, $pluginSettings, $user, $useUser = false) {
+
 	if(!$useUser) { //loguser {
 		if(array_key_exists($settingname, $pluginSettings))
 			return $pluginSettings[$settingname]['value'];
@@ -27,11 +29,23 @@ function getSetting($settingname, $useUser = false) {
 	return '';
 }
 
+
+
+
 class BadPluginException extends Exception { }
+
+
+
 
 // TODO cache all those data so we don't have to scan directories at each run
 function getPluginData($plugin, $load = true) {
-	global $pluginpages, $pluginbuckets, $plugintemplates, $misc, $abxd_version, $router;
+
+    $router = new AltoRouter();
+
+    $pluginbuckets = [];
+    $pluginpages = [];
+    $plugintemplates = [];
+
 
 	if(!is_dir(__DIR__.'/../plugins/'.$plugin))
 		throw new BadPluginException('Plugin folder is gone');
@@ -41,7 +55,7 @@ function getPluginData($plugin, $load = true) {
 	if(!file_exists(__DIR__.'/../plugins/'.$plugin.'/plugin.settings'))
 		throw new BadPluginException(__("Plugin folder doesn't contain plugin.settings"));
 
-	$minver = 220; //we introduced these plugins in 2.2.0 so assume this.
+
 
 	$settingsFile = file_get_contents(__DIR__.'/../plugins/'.$plugin.'/plugin.settings');
 	$settings = explode("\n", $settingsFile);
@@ -53,12 +67,12 @@ function getPluginData($plugin, $load = true) {
 		$setting[1] = trim($setting[1]);
 		if($setting[0][0] == '#') continue;
 		if($setting[0][0] == "$")
-			registerSetting(substr($setting[0],1), $setting[1]);
+			registerSetting();
 		else
 			$plugindata[$setting[0]] = $setting[1];
 
-		if($setting[0] == 'minversion')
-			$minver = (int)$setting[1];
+		    //if($setting[0] == 'minversion')
+		    //	$minver = (int)$setting[1];
 	}
 
 	$plugindata['buckets'] = [];
@@ -66,7 +80,8 @@ function getPluginData($plugin, $load = true) {
 	$plugindata['templates'] = [];
 
 	$dir = __DIR__.'/../plugins/'.$plugindata['dir'];
-	$pdir = @opendir($dir);
+	error_reporting(0);
+	$pdir = opendir($dir);
 	while($f = readdir($pdir)) {
 		if(substr($f, -4) == '.php') {
 			if(substr($f, 0, 5) == 'page_') {
@@ -83,9 +98,10 @@ function getPluginData($plugin, $load = true) {
 		}
 	}
 	closedir($pdir);
-
+    error_reporting(0);
 	if (is_dir($dir.'/pages')) {
-		$pdir = @opendir($dir.'/pages');
+
+		$pdir = opendir($dir.'/pages');
 		while($f = readdir($pdir)) {
 			if(substr($f, -4) == '.php') {
 				$pagename = substr($f, 0, -4);
@@ -97,7 +113,8 @@ function getPluginData($plugin, $load = true) {
 	}
 
 	if (is_dir($dir.'/layouts')) {
-		$pdir = @opendir($dir.'/layouts');
+        error_reporting(0);
+		$pdir = opendir($dir.'/layouts');
 		while($f = readdir($pdir)) {
 			if(substr($f, -4) == '.tpl') {
 				$tplname = substr($f, 0, -4);

@@ -17,7 +17,7 @@ $layout_actionlinks = '';
 
 if (isset($_GET['forcelayout'])) {
 	setcookie('forcelayout', (int)$_GET['forcelayout'], time()+365*24*3600, URL_ROOT, '', false, true);
-	die(header('Location: '.$_SERVER['HTTP_REFERER']));
+	trigger_error(header('Location: '.$_SERVER['HTTP_REFERER']));
 }
 
 $layout_birthdays = getBirthdaysText();
@@ -111,7 +111,7 @@ if($ajaxPage == true) {
 		header('Content-Type: text/plain');
 		ob_end_flush();
 	}
-	die();
+	trigger_error();
 }
 
 $layout_contents = ob_get_contents();
@@ -197,11 +197,10 @@ if (file_exists(URL_ROOT.'/themes/$theme/logo.png')) {
 	$logo = '<h1>'.$layout_boardtitle.'</h1><h3>'.$layout_description.'</h3>';
 }
 
-function checkForImage(&$image, $external, $file) {
-	global $dataDir, $dataUrl;
-	if(isset($image)) return;
+function checkForImage(&$image, $external, $file, $dataDir=null, $dataUrl=null) {
+		if(isset($image)) return;
 	if(isset($external)) {
-		if(file_exists($dataDir.$file))
+		if(file_exists($dataDir.$file) && isset($dataUrl))
 			$image = $dataUrl.$file;
 	} else {
 		if(file_exists($file))
@@ -278,7 +277,7 @@ $perfdata = 'Page rendered in '.sprintf('%.03f',microtime(true)-$starttime).' se
 <form action="<?php echo htmlentities(pageLink('logout')); ?>" method="post" id="logout" style="display:none;"><input type="hidden" name="action" value="logout"></form>
 <?php
 	if (Settings::get('maintenance'))
-		echo '<div style="font-size:30px; font-weight:bold; color:red; background:black; padding:5px; border:2px solid red; position:absolute; top:30px; left:30px;">MAINTENANCE MODE</div>';
+		//print '<div style="font-size:30px; font-weight:bold; color:red; background:black; padding:5px; border:2px solid red; position:absolute; top:30px; left:30px;">MAINTENANCE MODE</div>';
 
 	RenderTemplate('default', [
 		'layout_contents' => $layout_contents,

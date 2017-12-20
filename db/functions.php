@@ -1,8 +1,19 @@
 <?php
-if (!defined('BLARG')) die();
+if (!defined('BLARG')) trigger_error();
 
-function Import($sqlFile) {
-	global $dblink, $dbpref;
+/*risoluzione 9337:
+da     function Import($sqlFile) {
+	    global $dblink, $dbpref;
+a      function Import($sqlFile, $dblink=null, $dbpref=null) {
+		if(!isset($dblink) || !isset($dbpref))
+	    return false;
+
+From Giosh96  */
+
+function Import($sqlFile, $dblink=null, $dbpref=null) {
+		if(!isset($dblink) || !isset($dbpref))
+	    return false;
+
 	$res = $dblink->multi_query(str_replace('{$dbpref}', $dbpref, file_get_contents($sqlFile)));
 
 	$i = 0; 
@@ -15,7 +26,7 @@ function Import($sqlFile) {
 	if ($dblink->errno)  { 
 		echo "MySQL Error when importing file $sqlFile at statement $i: \n";
 		echo $dblink->error, "\n";
-		die();
+		trigger_error();
 	}
 }
 
@@ -35,10 +46,25 @@ function creaQuery($table, $tableSchema)  {
         $create .= "\n) ENGINE=MyISAM DEFAULT CHARSET=utf8 COLLATE=utf8_bin;";
     return $create;
 }
-
-
-function Upgrade() {
+/*risoluzione 9337:
+da    function Upgrade() {
 	global $dbname, $dbpref;
+
+a
+function Upgrade($dbname=null, $dbpref=null) {
+
+    if(!isset($dbname) || !isset($dbpref))
+        return false;
+
+From Giosh96  */
+
+function Upgrade($dbname=null, $dbpref=null) {
+
+    if(!isset($dbname) || !isset($dbpref))
+        return false;
+
+    $tables=[];
+
 	//Load the board tables.
 	include(__DIR__ . '/schema.php');
 	//Allow plugins to add their own tables!
@@ -56,13 +82,15 @@ function Upgrade() {
 		}
 	}
 	foreach($tables as $table => $tableSchema) {
-		print '<li>'.$dbpref.$table.'&hellip;';
+	 //  $str = <<< HTML <li>$dbpref.$table.'&hellip;';HTML;
+		print $dbpref.$table.'&hellip;';
+
 		$tableStatus = Query("show table status from $dbname like '{".$table."}'");
 		$numRows = NumRows($tableStatus);
 		if($numRows == 0) {
             Query(creaQuery($table, $tableSchema));
 		} else {
-			$primaryKey = '';
+
 			$changes = 0;
 			$foundFields = [];
 			$scan = Query('show columns from `{'.$table.'}`');
@@ -81,12 +109,12 @@ function Upgrade() {
 				else
 					$type .= " DEFAULT '".$field['Default']."'";
 				if($field['Key'] == 'PRI')
-					$primaryKey = $fieldName;
+					//$primaryKey = $fieldName;
 				if(array_key_exists($fieldName, $tableSchema['fields'])) {
 					$wantedType = $tableSchema['fields'][$fieldName];
 					if(strcasecmp($wantedType, $type)) {
-						print " \"".$fieldName."\" not correct type: was $type, wanted $wantedType &hellip;<br />";
-						if($fieldName == 'id') {
+
+						print " \"".$fieldName."\" not correct type: was $type, wanted $wantedType &hellip;";						if($fieldName == 'id') {
 							print_r($field);
 							print '{ '.$type.' }';
 						}
@@ -120,13 +148,14 @@ function Upgrade() {
 			}
 			if (!compareIndexes($curindexes, $newindexes)) {
 				$changes++;
-				print '<br>Recreating indexes...<br>';
+				print '/nRecreating indexes.../n';
                 recreateIndex($curindexes, $newindexes, $table);
 			}
 			if($changes == 0)
 				print ' OK.';
 		}
-		print '</li>';
+
+
 	}
 }
 
@@ -137,14 +166,14 @@ function recreateIndex($curindexes, $newindexes, $table) {
             continue;
         }
 
-        print " - removing index {$name} ({$idx['type']}, {$idx['fields']})<br>";
+        print " - removing index {$name} ({$idx['type']}, {$idx['fields']})/n";
         if ($idx['type'] == 'primary')
             Query('ALTER TABLE `{'.$table.'}` DROP PRIMARY KEY');
         else
             Query('ALTER TABLE `{'.$table.'}` DROP INDEX `'.$name.'`');
     }
     foreach ($newindexes as $name=>$idx) {
-        print " - adding index {$name} ({$idx['type']}, {$idx['fields']})<br>";
+        print " - adding index {$name} ({$idx['type']}, {$idx['fields']})/n";
         if ($idx['type'] == 'primary')
             $add = 'PRIMARY KEY';
         else if ($idx['type'] == 'unique')

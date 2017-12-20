@@ -101,7 +101,6 @@ class Spyc {
   private $path;
   private $result;
   private $LiteralPlaceHolder = '___YAML_Literal_Block___';
-  private $SavedGroups = [];
   private $indent;
   /**
    * Path modifier that should be applied after adding current element.
@@ -251,7 +250,7 @@ class Spyc {
 	  $previous_key = -1;
 	  foreach ($array as $key => $value) {
 		if (!isset($first_key)) $first_key = $key;
-		$string .= $this->_yamlize($key,$value,0,$previous_key, $first_key, $array);
+		$string .= $this->_yamlize($key,$value,0, $array);
 		$previous_key = $key;
 	  }
 	}
@@ -266,21 +265,21 @@ class Spyc {
 	 * @param $value The value of the item
 	 * @param $indent The indent of the current node
 	 */
-  private function _yamlize($key,$value,$indent, $previous_key = -1, $first_key = 0, $source_array = null) {
+  private function _yamlize($key,$value,$indent, $source_array = null) {
 	if(is_object($value)) $value = (array)$value;
 	if (is_array($value)) {
 	  if (empty ($value))
-		return $this->_dumpNode($key, [], $indent, $previous_key, $first_key, $source_array);
+		return $this->_dumpNode($key, [], $indent, $source_array);
 	  // It has children.  What to do?
 	  // Make it the right kind of item
-	  $string = $this->_dumpNode($key, self::REMPTY, $indent, $previous_key, $first_key, $source_array);
+	  $string = $this->_dumpNode($key, self::REMPTY, $indent, $source_array);
 	  // Add the indent
 	  $indent += $this->_dumpIndent;
 	  // Yamlize the array
 	  $string .= $this->_yamlizeArray($value,$indent);
 	} elseif (!is_array($value)) {
 	  // It doesn't have children.  Yip.
-	  $string = $this->_dumpNode($key, $value, $indent, $previous_key, $first_key, $source_array);
+	  $string = $this->_dumpNode($key, $value, $indent, $source_array);
 	}
 	return $string;
   }
@@ -298,7 +297,7 @@ class Spyc {
 	  $previous_key = -1;
 	  foreach ($array as $key => $value) {
 		if (!isset($first_key)) $first_key = $key;
-		$string .= $this->_yamlize($key, $value, $indent, $previous_key, $first_key, $array);
+		$string .= $this->_yamlize($key, $value, $indent, $array);
 		$previous_key = $key;
 	  }
 	  return $string;
@@ -315,7 +314,7 @@ class Spyc {
 	 * @param $value The value of the item
 	 * @param $indent The indent of the current node
 	 */
-  private function _dumpNode($key, $value, $indent, $previous_key = -1, $first_key = 0, $source_array = null) {
+  private function _dumpNode($key, $value, $indent, $source_array = null) {
 	// do some folding here, for blocks
 	if (is_string ($value) && ((strpos($value,"\n") !== false || strpos($value,': ') !== false || strpos($value,'- ') !== false ||
 	  strpos($value,'*') !== false || strpos($value,'#') !== false || strpos($value,'<') !== false || strpos($value,'>') !== false || strpos ($value, '%') !== false || strpos ($value, '  ') !== false ||
@@ -566,11 +565,10 @@ class Spyc {
 	$line = trim($line);
 	if (!isset($line)) return [];
 
-	$array = [];
 
 	$group = $this->nodeContainsGroup($line);
 	if (isset($group)) {
-	  $this->addGroup($line, $group);
+	  $this->addGroup($group);
 	  $line = $this->stripGroup ($line, $group);
 	}
 
@@ -697,13 +695,13 @@ class Spyc {
   private function _inlineEscape($inline) {
 	$seqs = [];
 	$maps = [];
-	$saved_strings = [];
-	$saved_empties = [];
+
+
 
 	// Check for empty strings
 	$regex = "/(\"\")|(\'\')/";
 	if (preg_match_all($regex,$inline,$strings)) {
-	  $saved_empties = $strings[0];
+	  //$saved_empties = $strings[0];
 	  $inline  = preg_replace($regex,'YAMLEmpty',$inline);
 	}
 	unset($regex);
@@ -711,7 +709,7 @@ class Spyc {
 	// Check for strings
 	$regex = "/(?:(\")|(?:\'))((?(1)[^\"]+|[^\']+))(?(1)\"|\')/";
 	if (preg_match_all($regex,$inline,$strings)) {
-	  $saved_strings = $strings[0];
+	 // $saved_strings = $strings[0];
 	  $inline  = preg_replace($regex,'YAMLString',$inline);
 	}
 	unset($regex);
@@ -737,7 +735,7 @@ class Spyc {
 
 	$explode = explode(',',$inline);
 	$explode = array_map('trim', $explode);
-	$stringi = 0; $i = 0;
+	$i = 0;
 
 	while (1) {
 	$explode = readdThings($seqs, $explode);
@@ -988,7 +986,7 @@ class Spyc {
   }
 
 
-  private function clearBiggerPathValues ($indent) {
+ /* private function clearBiggerPathValues ($indent) {
 
 
 	if ($indent == 0) $this->path = [];
@@ -999,7 +997,7 @@ class Spyc {
 	}
 
 	return true;
-  }
+  }*/
 
 
   private static function isComment ($line) {
@@ -1022,25 +1020,25 @@ class Spyc {
 
 	return true;
   }
+        /*
+         private function isHashElement ($line) {
+           return strpos($e, ':');
+         }
 
-  private function isHashElement ($line) {
-	return strpos($line, ':');
-  }
-
-  private function isLiteral ($line) {
-	if ($this->isArrayElement($line)) return false;
-	if ($this->isHashElement($line)) return false;
-	return true;
-  }
+        /* private function isLiteral ($line) {
+           if ($this->isArrayElement($line)) return false;
+           if ($this->isHashElement($line)) return false;
+           return true;
+         }*/
 
 
-  private static function unquote ($value) {
+  /*private static function unquote ($value) {
 	if (!isset($value)) return $value;
 	if (!is_string($value)) return $value;
 	if ($value[0] == "\'") return trim ($value, "\'");
 	if ($value[0] == '"') return trim ($value, '"');
 	return $value;
-  }
+  }*/
 
   private function startsMappedSequence ($line) {
 	return (substr($line, 0, 2) == '- ' && substr ($line, -1, 1) == ':');
@@ -1125,7 +1123,7 @@ class Spyc {
 
   private function nodeContainsGroup ($line) {
 	$symbolsForReference = 'A-z0-9_\-';
-	if (strpos($line, '&') === false && strpos($line, '*') === false) return false; // Please die fast ;-)
+	if (strpos($line, '&') === false && strpos($line, '*') === false) return false; // Please trigger_error fast ;-)
 	if ($line[0] == '&' && preg_match('/^(&['.$symbolsForReference.']+)/', $line, $matches)) return $matches[1];
 	if ($line[0] == '*' && preg_match('/^(\*['.$symbolsForReference.']+)/', $line, $matches)) return $matches[1];
 	if (preg_match('/(&['.$symbolsForReference.']+)$/', $line, $matches)) return $matches[1];
@@ -1135,7 +1133,7 @@ class Spyc {
 
   }
 
-  private function addGroup ($line, $group) {
+  private function addGroup ($group) {
 	if ($group[0] == '&') $this->_containsGroupAnchor = substr ($group, 1);
 	if ($group[0] == '*') $this->_containsGroupAlias = substr ($group, 1);
 	//print_r ($this->path);
@@ -1155,6 +1153,6 @@ do {
   if (PHP_SAPI != 'cli') break;
   if (empty ($_SERVER['argc']) || $_SERVER['argc'] < 2) break;
   if (empty ($_SERVER['PHP_SELF']) || FALSE === strpos ($_SERVER['PHP_SELF'], 'Spyc.php') ) break;
-  $file = $argv[1];
+  $file = htmlspecialchars($argv[1]);
   echo json_encode (spyc_load_file ($file));
 } while (0);

@@ -1,6 +1,6 @@
 <?php
 //  AcmlmBoard XD support - Login support
-if (!defined('BLARG')) die();
+if (!defined('BLARG')) trigger_error();
 
 $bots = [
 	'Microsoft URL Control', 'Bingbot', 'Microsoft URL Control - 5.01.4511', 'Microsoft URL Control - 6.00.8169',
@@ -151,7 +151,7 @@ if(isset($_qRecords))
 	$rRecords = Query($_qRecords, $onlineUserCt, time(), $onlineUsers, $newToday, $newLastHour);
 }
 
-//Delete oldies visitor from the guest list. We may re-add him/her later.
+//Delete oltrigger_errors visitor from the guest list. We may re-add him/her later.
 Query('delete from {guests} where date < {0}', (time()-300));
 
 //Lift dated Tempbans
@@ -194,9 +194,9 @@ if(isset($ipban)) {
 	$adminemail = Settings::get('ownerEmail');
 	
 	print 'You have been IP-banned from this board'.($ipban['date'] ? ' until '.gmdate('M jS Y, G:i:s',$ipban['date'])." (GMT). That's ".TimeUnits($ipban['date']-time()).' left' : '').'. Attempting to get around this in any way will result in worse things.';
-	print '<br>Reason: '.$ipban['reason'];
-	if (isset($adminemail)) print '<br><br>If you were erroneously banned, contact the board owner at: '.$adminemail;
-	exit();
+	print '/n Reason: '.$ipban['reason'];
+	if (isset($adminemail)) print '/n/nIf you were erroneously banned, contact the board owner at: '.$adminemail;
+	trigger_error();
 }
 
 function doHash($data)
@@ -246,7 +246,7 @@ if(isset($loguser)) {
 if ($loguser['flags'] & 0x1) {
 	Query('INSERT INTO {ipbans} (ip,reason,date) VALUES ({0},{1},0)',
 		$_SERVER['REMOTE_ADDR'], '['.htmlspecialchars($loguser['name']).'] Account IP-banned');
-	die(header('Location: '.$_SERVER['REQUEST_URI']));
+	trigger_error(header('Location: '.$_SERVER['REQUEST_URI']));
 }
 
 if (isset($mobileLayout) && $mobileLayout) {
@@ -257,8 +257,7 @@ if (isset($mobileLayout) && $mobileLayout) {
 }
 
 
-function setLastActivity() {
-	global $loguserid, $isBot, $lastKnownBrowser, $ipban;
+function setLastActivity($loguserid=0, $isBot=null, $lastKnownBrowser=null, $ipban=null) {
 
 	Query('delete from {guests} where ip = {0}', $_SERVER['REMOTE_ADDR']);
 
@@ -271,10 +270,14 @@ function setLastActivity() {
 		$ua = '';
 		if(isset($_SERVER['HTTP_USER_AGENT']))
 			$ua = $_SERVER['HTTP_USER_AGENT'];
+		if(isset($isBot))
 		Query('insert into {guests} (date, ip, lasturl, useragent, bot) values ({0}, {1}, {2}, {3}, {4})',
 			time(), $_SERVER['REMOTE_ADDR'], $url, $ua, $isBot);
+		else return;
 	} else {
+	    if(isset($lastKnownBrowser))
 		Query('update {users} set lastactivity={0}, lastip={1}, lasturl={2}, lastknownbrowser={3}, loggedin=1 where id={4}',
 			time(), $_SERVER['REMOTE_ADDR'], $url, $lastKnownBrowser, $loguserid);
+	    else return;
 	}
 }

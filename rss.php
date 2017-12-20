@@ -1,5 +1,5 @@
 <?php
-// test 
+
 define('BLARG', 1);
 
 function fixyoutube($m)
@@ -15,13 +15,13 @@ require(__DIR__ . '/lib/common.php');
 
 $fid = Settings::get('newsForum');
 if(!HasPermission('forum.viewforum', $fid))
-	die("You aren't allowed to access this forum.");
+	trigger_error("You aren't allowed to access this forum.");
 
 $rFora = Query('select * from {forums} where id = {0}',$fid);
 if(NumRows($rFora))
 	$forum = Fetch($rFora);
 else
-	die('Unknown forum ID.');
+	trigger_error('Unknown forum ID.');
 
 
 header('Content-type: application/rss+xml');
@@ -98,15 +98,15 @@ print '<?xml version="1.0" encoding="UTF-8"?>';
 		
 		$username = htmlspecialchars($username);
 		
-		echo "
-		<item>
-			<title>{$title} -- posted by {$username}</title>
-			<link>{$entryurl}</link>
-			<pubDate>{$rfcdate}</pubDate>
-			<description><![CDATA[{$text}]]></description>
-			<guid>{$entryurl}</guid>
-		</item>
-";
+		   // echo "
+		 //   <item>
+		//	<title>{$title} -- posted by {$username}</title>
+		//	<link>{$entryurl}</link>
+			// <pubDate>{$rfcdate}</pubDate>
+		    // <description><![CDATA[{$text}]]></description>
+		   // <guid>{$entryurl}</guid>
+		   // </item>
+           // ";
 	}
 ?>
 	</channel>

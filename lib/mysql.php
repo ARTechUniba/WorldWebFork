@@ -1,6 +1,6 @@
 <?php
 // AcmlmBoard XD support - MySQL database wrapper functions
-if (!defined('BLARG')) die();
+if (!defined('BLARG')) trigger_error();
 
 include(__DIR__.'/../config/database.php');
 
@@ -23,8 +23,8 @@ $queries = 0;
                 }
 
 
-function SqlEscape($text) {
-	global $dblink;
+function SqlEscape($text, $dblink) {
+
 	return $dblink->real_escape_string($text);
 }
 
@@ -39,8 +39,8 @@ function Query_ExpandFieldLists($match) {
 	return implode(',', $ret);
 }
 
-function Query_AddUserInput($match) {
-	global $args;
+function Query_AddUserInput($match, $args) {
+
 	$match = $match[1];
 	$format = 's';
 	if(preg_match("/^\d+\D$/", $match)) {
@@ -81,8 +81,8 @@ function Query_AddUserInput($match) {
  *
  */
  
-function Query_MangleTables($match) {
-	global $dbpref, $tableLists;
+function Query_MangleTables($match, $dbpref, $tableLists) {
+
 	$tablename = $match[1];
 	if(isset($tableLists[$tablename]))
 		return $tableLists[$tablename];
@@ -91,8 +91,8 @@ function Query_MangleTables($match) {
 }
 
 
-function query() {
-	global $dbpref, $args, $fieldLists;
+function query($args, $fieldLists) {
+
 	$args = func_get_args();
 	if (is_array($args[0])) $args = $args[0];
 
@@ -115,13 +115,13 @@ function query() {
 $tableLists = [
 ];
 
-function rawQuery($query) {
-	global $queries, $querytext, $loguser, $dblink, $debugMode, $logSqlErrors, $dbpref, $loguserid, $mysqlCellClass;
+function rawQuery($query,$dblink, $debugMode, $logSqlErrors, $dbpref, $loguserid) {
+
 
 //	if($debugMode)
-//		$queryStart = usectime();
-
-	$res = @$dblink->query($query);
+//	$queryStart = usectime();
+    error_reporting(0);
+	$res = $dblink->query($query);
 
 	if(!isset($res)) {
 		$theError = $dblink->error;
@@ -136,28 +136,29 @@ function rawQuery($query) {
 			$cookie = sqlEscape(var_export($_COOKIE, true));
 			$theError = sqlEscape($theError);
 			$logQuery = "INSERT INTO {$dbpref}queryerrors (`user`,`ip`,`time`,`query`,`get`,`post`,`cookie`, `error`) VALUES ($loguserid, '$ip', $time, '$thequery', '$get', '$post', '$cookie', '$theError')";
-			$res = @$dblink->query($logQuery);
+            error_reporting(0);
+			$res = $dblink->query($logQuery);
 		}
 
 		if($debugMode == true) {
 			$bt = '';
 			if(function_exists('backTrace'))
 				$bt = backTrace();
-			die(nl2br($bt).
+			trigger_error(nl2br($bt).
 				'<br /><br />'.htmlspecialchars($theError).
 				'<br /><br />Query was: <code>'.htmlspecialchars($query).'</code>');
 		} else
 				trigger_error('MySQL Error.', E_USER_ERROR);
-		die('MySQL Error.');
+		trigger_error('MySQL Error.');
 	}
 
-	$queries++;
+	//$queries++;
 
 	if($debugMode == true) {
-		$mysqlCellClass = ($mysqlCellClass+1)%2;
-		$querytext .= '<tr class=\"cell$mysqlCellClass\"><td><pre style=\"white-space:pre-wrap;\">'.htmlspecialchars(preg_replace('/^\s*/m', '', $query)).'</pre></td><td>';
-		if(function_exists('backTrace'))
-			$querytext .= backTrace();
+		//$mysqlCellClass = ($mysqlCellClass+1)%2;
+		//$querytext .= '<tr class=\"cell$mysqlCellClass\"><td><pre style=\"white-space:pre-wrap;\">'.htmlspecialchars(preg_replace('/^\s*/m', '', $query)).'</pre></td><td>';
+		//if(function_exists('backTrace'))
+		//	$querytext .= backTrace();
 	}
 
 	return $res;
@@ -189,13 +190,13 @@ function numRows($result) {
 	return $result->num_rows;
 }
 
-function insertId() {
-	global $dblink;
+function insertId($dblink) {
+
 	return $dblink->insert_id;
 }
 
-function affectedRows() {
-	global $dblink;
+function affectedRows($dblink) {
+
 	return $dblink->affected_rows;
 }
 
@@ -215,9 +216,7 @@ $fieldLists = [
 ];
 
 function loadFieldLists() {
-	global $fieldLists, $tableLists;
-
 	//Allow plugins to add their own!
-	$bucket = 'fieldLists';
+
 	include(__DIR__.'/pluginloader.php');
 }

@@ -1,5 +1,5 @@
 <?php
-if (!defined('BLARG')) die();
+if (!defined('BLARG')) trigger_error();
 
 $ishttps = ($_SERVER['SERVER_PORT'] == 443);
 $serverport = ($_SERVER['SERVER_PORT'] == ($ishttps?443:80)) ? '' : ':'.$_SERVER['SERVER_PORT'];
@@ -21,7 +21,8 @@ function actionLink($action, $id='', $args='', $urlname='') {
 		$boardroot = './';
 
 	// Making this easir to handle later
-	$hasid = (@is_numeric($id) || is_string($id));
+    error_reporting(0);
+	$hasid = (is_numeric($id) || is_string($id));
 
 	// rewritten links
 	if ($action == MAIN_PAGE)
@@ -41,8 +42,8 @@ function actionLink($action, $id='', $args='', $urlname='') {
 
 }
 
-function pageLink($page, $params=[], $extra='') {
-	global $router;
+function pageLink($page, $router, $params=[], $extra='') {
+
 	return $router->generate($page, $params) . ($extra != '' ? '?' . $extra : '');
 }
 
@@ -83,8 +84,8 @@ function resourceLink($what) {
 	return URL_ROOT.$what;
 }
 
-function themeResourceLink($what) {
-	global $theme;
+function themeResourceLink($what, $theme) {
+
 	return URL_ROOT."themes/$theme/$what";
 }
 
@@ -141,10 +142,7 @@ function prettyRainbow($s) {
 $poptart = mt_rand(0,359);
 $dorainbow = -1;
 
-function userLink($user, $showMinipic = false, $customID = false, $returnOnlyHref = false) {
-	global $usergroups;
-	global $poptart, $dorainbow, $newToday;
-	global $luckybastards;
+function userLink($user,$usergroups, $poptart, $dorainbow, $newToday, $luckybastards, $showMinipic = false, $customID = false, $returnOnlyHref = false) {
 
 	if ($dorainbow == -1) {
 		$dorainbow = false;
@@ -154,7 +152,7 @@ function userLink($user, $showMinipic = false, $customID = false, $returnOnlyHre
 	}
 
 	$fgroup = $usergroups[$user['primarygroup']];
-	$fsex = $user['sex'];
+	//$fsex = $user['sex'];
 	$fname = ($user['displayname'] ? $user['displayname'] : $user['name']);
 	$fname = htmlspecialchars($fname);
 	$fname = str_replace(' ', '&nbsp;', $fname);
@@ -165,25 +163,25 @@ function userLink($user, $showMinipic = false, $customID = false, $returnOnlyHre
 	if($showMinipic || Settings::get('alwaysMinipic'))
 		$minipic = getMinipicTag($user);
 
-	if(!Settings::get('showGender'))
-		$fsex = 2;
+	//if(!Settings::get('showGender'))
+	//	$fsex = 2;
 	//else if ($fsex != 2)
 	//	$fsex = $fsex ? 0:1; // switch male/female for the lulz
 
-	if ($fsex == 0) $scolor = 'color_male';
-	else if ($fsex == 1) $scolor = 'color_female';
-	else $scolor = 'color_unspec';
+	//if ($fsex == 0) $scolor = 'color_male';
+	//else if ($fsex == 1) $scolor = 'color_female';
+	//else $scolor = 'color_unspec';
 
-	$classing = ' style="color: '.htmlspecialchars($fgroup[$scolor]).';"';
-
-	$bucket = 'userLink'; include(__DIR__.'/pluginloader.php');
-
+	//$classing = ' style="color: '.htmlspecialchars($fgroup[$scolor]).';"';
+    //non è utilizzata
+	//$bucket = 'userLink'; include(__DIR__.'/pluginloader.php');
+    var_dump($poptart);
 	if (!$isbanned && $luckybastards && in_array($user['id'], $luckybastards)) {
-		$classing = ' style="text-shadow:0px 0px 4px;"';
+
 		$fname = prettyRainbow($fname);
 	} else if ($dorainbow == true) {
 		if (!$isbanned)
-			$classing = ' style="color:hsl('.$poptart.',100%,80.4%);"';
+			//$classing = ' style="color:hsl('.$poptart.',100%,80.4%);"';
 		$poptart += 31;
 		$poptart %= 360;
 	}
@@ -192,8 +190,8 @@ function userLink($user, $showMinipic = false, $customID = false, $returnOnlyHre
 
 	if ($customID)
 		$classing .= " id=\"$customID\"";
-
-	$title = htmlspecialchars($user['displayname'] ? $user['displayname'] : $user['name']) . ' ('.$user['id'].') ['.htmlspecialchars($fgroup['title']).']';
+    //Non è utilizzata
+	//$title = htmlspecialchars($user['displayname'] ? $user['displayname'] : $user['name']) . ' ('.$user['id'].') ['.htmlspecialchars($fgroup['title']).']';
 	if ($returnOnlyHref) {
 		return pageLink('profile', $user['id'], false, $fname);
 	} else {
@@ -205,8 +203,7 @@ function userLink($user, $showMinipic = false, $customID = false, $returnOnlyHre
 	;
 }
 
-function userLinkById($id) {
-	global $userlinkCache;
+function userLinkById($id, $userlinkCache) {
 
 	if(!isset($userlinkCache[$id])) {
 		$rUser = Query('SELECT u.(_userfields) FROM {users} u WHERE u.id={0}',$id);
@@ -310,8 +307,8 @@ function pageLinksInverted($url, $epp, $from, $total) {
 }
 
 
-function absoluteActionLink($action, $id=0, $args='') {
-	global $serverport;
+function absoluteActionLink($action, $https, $serverport, $id=0, $args='') {
+
 	return ($https?'https':'https') . '://' . $_SERVER['SERVER_NAME'].$serverport.dirname($_SERVER['PHP_SELF']).substr(actionLink($action, $id, $args), 1);
 }
 
@@ -319,8 +316,8 @@ function getRequestedURL() {
 	return $_SERVER['REQUEST_URI'];
 }
 
-function getServerDomainNoSlash($https = false) {
-	global $serverport;
+function getServerDomainNoSlash($serverport, $https = false) {
+
 	return ($https?'https':'https') . '://' . $_SERVER['SERVER_NAME'].$serverport;
 }
 
@@ -328,8 +325,8 @@ function getServerURL($https = false) {
 	return getServerURLNoSlash($https).'/';
 }
 
-function getServerURLNoSlash($https = false) {
-	global $serverport;
+function getServerURLNoSlash($serverport, $https = false) {
+
 	return ($https?'https':'http') . '://' . $_SERVER['SERVER_NAME'].$serverport . substr(URL_ROOT, 0, strlen(URL_ROOT)-1);
 }
 
@@ -345,18 +342,18 @@ function getFullURL() {
 // --- Smarty interface
 // ----------------------------------------------------------------------------
 
-function smarty_function_pageLink($params, $template) {
+function smarty_function_pageLink($params) {
 	$passParams = isset($params['params']) ? $params['params'] : [];
 	return pageLink($params['name'], $passParams);
 }
 
-function smarty_function_actionLink($params, $template) {
+function smarty_function_actionLink($params) {
 	$id = isset($params['id']) ? $params['id'] : false;
 	$args = isset($params['args']) ? $params['args'] : '';
 	$url = isset($params['urlname']) ? $params['urlname'] : '';
 	return htmlspecialchars(actionLink($params['page'], ($id?:''), $args, $url));
 }
 
-function smarty_function_resourceLink($params, $template) {
+function smarty_function_resourceLink($params) {
 	return htmlspecialchars(resourceLink($params['url']));
 }
