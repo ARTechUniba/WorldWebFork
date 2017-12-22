@@ -7,13 +7,7 @@ if (!defined('BLARG')) trigger_error();
 
 
 
-function RenderTemplate($template,$tpl, $mobileLayout=true, $options=null) {
-
-    $plugintemplates=[];
-    $plugins=[];
-    //$mobilelayout e tpl come parametro
-
-	//global $tpl, $mobileLayout, $plugintemplates, $plugins;
+function RenderTemplate($template,$tpl, $mobileLayout=null, $options=null, $plugintemplates=[], $plugins=[] ) {
 
 	if (array_key_exists($template, $plugintemplates)) {
 		$plugin = $plugintemplates[$template];
@@ -42,28 +36,27 @@ function RenderTemplate($template,$tpl, $mobileLayout=true, $options=null) {
 	$tpl->display($tplname);
 }
 
+
 function makeCrumbs($path) {
 
+    if(count($path) != 0) {
+        $pathPrefix = [actionLink(0) => Settings::get('breadcrumbsMainName')];
 
-	if(count($path) != 0) {
-		$pathPrefix = [actionLink(0) => Settings::get('breadcrumbsMainName')];
+       // $bucket = 'breadcrumbs'; include __DIR__.'/pluginloader.php';
+
+        $path = $pathPrefix + $path;
+    }
 
 
-		$path = $pathPrefix + $path;
-	}
-
-	//$layout_crumbs = $path;
-	//$layout_actionlinks = $links;
+    return $path;
 }
 
 function makeBreadcrumbs($path) {
-    $layout_crumbs='';
-	$path->addStart(new PipeMenuLinkEntry(Settings::get('breadcrumbsMainName'), 'board'));
-	$path->setClass('breadcrumbs');
-	$bucket = 'breadcrumbs'; include('lib/pluginloader.php');
-	$layout_crumbs = $path;
 
-	return $layout_crumbs;
+    $path->addStart(new PipeMenuLinkEntry(Settings::get('breadcrumbsMainName'), 'board'));
+	$path->setClass('breadcrumbs');
+	$bucket = 'breadcrumbs'; include 'lib/pluginloader.php';
+	return $path;
 }
 
 function mfl_forumBlock($fora, $catid, $selID, $indent) {
@@ -84,6 +77,8 @@ function mfl_forumBlock($fora, $catid, $selID, $indent) {
 
 function makeForumList($fieldname,$forumBoards, $allowNone=false) {
 
+   if(!isset($forumBoards))
+       return;
 
 	$viewableforums = ForumsWithPermission('forum.viewforum');
 	$viewhidden = HasPermission('user.viewhiddenforums');
@@ -127,6 +122,9 @@ function makeForumList($fieldname,$forumBoards, $allowNone=false) {
 
 function forumCrumbs($forum, $forumBoards) {
 
+    if(!isset($forumBoards))
+        return;
+
 	$ret = [actionLink('board') => __('Forums')];
 
 	if ($forum['board'] != '')
@@ -153,8 +151,11 @@ function makeForumCrumbs($crumbs, $forum) {
 	}
 }
 
-function doThreadPreview($tid, $maxdate=0) {
-    $loguser = Fetch(Query('SELECT * FROM {users} WHERE id={0}', $session['user']));
+function doThreadPreview($tid, $maxdate=0, $loguser=null) {
+
+    if(!isset($loguser))
+        return;
+
 	$review = [];
 	$ppp = $loguser['postsperpage'] ?: 20;
 
@@ -185,37 +186,47 @@ function doThreadPreview($tid, $maxdate=0) {
 
 	RenderTemplate('threadreview', ['review' => $review]);
 }
-function rForaQuery($parent, $viewableforums, $viewhidden, $loguserid, $boardlol='' ) {
+function rForaQuery($parent, $viewableforums, $viewhidden,$boardlol='', $loguserid=null){
 
-    $rFora = Query('	SELECT f.*,
-							c.name cname,
-							'.($loguserid ? '(NOT ISNULL(i.fid))' : '0').' ignored,
-							(SELECT COUNT(*) FROM {threads} t'.($loguserid ? ' LEFT JOIN {threadsread} tr ON tr.thread=t.id AND tr.id={0}' : '').
-        'WHERE t.forum=f.id AND t.lastpostdate>'.($loguserid ? 'IFNULL(tr.date,0)' : time()-900).') numnew,
-							lu.(_userfields)
-						FROM {forums} f
-							LEFT JOIN {categories} c ON c.id=f.catid
-							'.($loguserid ? 'LEFT JOIN {ignoredforums} i ON i.fid=f.id AND i.uid={0}' : '').'
-							LEFT JOIN {users} lu ON lu.id=f.lastpostuser
-						WHERE f.id IN ({1c}) AND '.($parent==0 ? 'c.board={2} AND f.catid>0' : 'f.catid={3}').(!$viewhidden ? ' AND f.hidden=0' : '').'
-						ORDER BY c.corder, c.id, f.forder, f.id',
-        $loguserid, $viewableforums, $boardlol, -$parent);
+    if (!isset($loguserid))
+        $rFora = null;
+    else {
+
+        $rFora = Query('	SELECT f.*,
+                                c.name cname,
+                                ' . ($loguserid ? '(NOT ISNULL(i.fid))' : '0') . ' ignored,
+                                (SELECT COUNT(*) FROM {threads} t' . ($loguserid ? ' LEFT JOIN {threadsread} tr ON tr.thread=t.id AND tr.id={0}' : '') .
+            'WHERE t.forum=f.id AND t.lastpostdate>' . ($loguserid ? 'IFNULL(tr.date,0)' : time() - 900) . ') numnew,
+                                lu.(_userfields)
+                            FROM {forums} f
+                                LEFT JOIN {categories} c ON c.id=f.catid
+                                ' . ($loguserid ? 'LEFT JOIN {ignoredforums} i ON i.fid=f.id AND i.uid={0}' : '') . '
+                                LEFT JOIN {users} lu ON lu.id=f.lastpostuser
+                            WHERE f.id IN ({1c}) AND ' . ($parent == 0 ? 'c.board={2} AND f.catid>0' : 'f.catid={3}') . (!$viewhidden ? ' AND f.hidden=0' : '') . '
+                            ORDER BY c.corder, c.id, f.forder, f.id',
+            $loguserid, $viewableforums, $boardlol, -$parent);
+    }
     return $rFora;
 }
 
-function rSubfora($parent, $viewableforums, $viewhidden,$loguserid, $boardlol='') {
+function rSubfora($parent, $viewableforums, $viewhidden, $boardlol='',$loguserid=null) {
+    if(!isset($loguserid))
+        $rSubfora = null;
 
-    $f = Fetch(Query('SELECT MIN(l) minl, MAX(r) maxr FROM {forums} WHERE '.($parent==0 ? 'board={0}' : 'catid={1}'), $boardlol, -$parent));
-    $rSubfora = Query('	SELECT f.*,
-							'.($loguserid ? '(NOT ISNULL(i.fid))' : '0').' ignored,
-							(SELECT COUNT(*) FROM {threads} t'.($loguserid ? ' LEFT JOIN {threadsread} tr ON tr.thread=t.id AND tr.id={0}' : '').'
-								WHERE t.forum=f.id AND t.lastpostdate>'.($loguserid ? 'IFNULL(tr.date,0)' : time()-900).') numnew
+    else {
+        $f = Fetch(Query('SELECT MIN(l) minl, MAX(r) maxr FROM {forums} WHERE ' . ($parent == 0 ? 'board={0}' : 'catid={1}'), $boardlol, -$parent));
+        $rSubfora = Query('	SELECT f.*,
+							' . ($loguserid ? '(NOT ISNULL(i.fid))' : '0') . ' ignored,
+							(SELECT COUNT(*) FROM {threads} t' . ($loguserid ? ' LEFT JOIN {threadsread} tr ON tr.thread=t.id AND tr.id={0}' : '') . '
+								WHERE t.forum=f.id AND t.lastpostdate>' . ($loguserid ? 'IFNULL(tr.date,0)' : time() - 900) . ') numnew
 						FROM {forums} f
-							'.($loguserid ? 'LEFT JOIN {ignoredforums} i ON i.fid=f.id AND i.uid={0}' : '').'
-						WHERE f.id IN ({1c}) AND f.l>{2} AND f.r<{3} AND f.catid!={4}'.(!$viewhidden ? ' AND f.hidden=0' : '').'
+							' . ($loguserid ? 'LEFT JOIN {ignoredforums} i ON i.fid=f.id AND i.uid={0}' : '') . '
+						WHERE f.id IN ({1c}) AND f.l>{2} AND f.r<{3} AND f.catid!={4}' . (!$viewhidden ? ' AND f.hidden=0' : '') . '
 						ORDER BY f.forder, f.id',
-        $loguserid, $viewableforums, $f['minl'], $f['maxr'], -$parent);
+            $loguserid, $viewableforums, $f['minl'], $f['maxr'], -$parent);
+    }
     return $rSubfora;
+
 }
 
 function rMods($parent, $boardlol) {
@@ -232,19 +243,22 @@ function rMods($parent, $boardlol) {
         'mod.');
     return $rMods;
 }
-function sForums($parent,$loguserid, $boardlol='') {
-
-    $f = Fetch(Query('SELECT MIN(l) minl, MAX(r) maxr FROM {forums} WHERE '.($parent==0 ? 'board={0}' : 'catid={1}'), $boardlol, -$parent));
-    $sForums = Query('	SELECT f.id, f.numthreads, f.numposts, f.lastpostid, f.lastpostname, f.lastpostuser, f.lastpostdate,
-											'.($loguserid ? '(NOT ISNULL(i.fid))' : '0').' ignored,
-											(SELECT COUNT(*), t.title FROM {threads} t'.($loguserid ? ' LEFT JOIN {threadsread} tr ON tr.thread=t.id AND tr.id={0}' : '').'
-												WHERE t.forum=f.id AND t.lastpostdate>'.($loguserid ? 'IFNULL(tr.date,0)' : time()-900).') numnew,
+function sForums($parent, $boardlol='',$loguserid=null) {
+    if(!isset($loguserid))
+        $sForums = null;
+    else {
+        $f = Fetch(Query('SELECT MIN(l) minl, MAX(r) maxr FROM {forums} WHERE ' . ($parent == 0 ? 'board={0}' : 'catid={1}'), $boardlol, -$parent));
+        $sForums = Query('	SELECT f.id, f.numthreads, f.numposts, f.lastpostid, f.lastpostname, f.lastpostuser, f.lastpostdate,
+											' . ($loguserid ? '(NOT ISNULL(i.fid))' : '0') . ' ignored,
+											(SELECT COUNT(*), t.title FROM {threads} t' . ($loguserid ? ' LEFT JOIN {threadsread} tr ON tr.thread=t.id AND tr.id={0}' : '') . '
+												WHERE t.forum=f.id AND t.lastpostdate>' . ($loguserid ? 'IFNULL(tr.date,0)' : time() - 900) . ') numnew,
 											lu.(_userfields)
 										FROM {forums} f
-											'.($loguserid ? 'LEFT JOIN {ignoredforums} i ON i.fid=f.id AND i.uid={0}' : '').'
+											' . ($loguserid ? 'LEFT JOIN {ignoredforums} i ON i.fid=f.id AND i.uid={0}' : '') . '
 											LEFT JOIN {users} lu ON lu.id=f.lastpostuser
 										WHERE f.l>={1} AND f.r<={2}',
-        $loguserid, $f['minl'], $f['maxr']);
+            $loguserid, $f['minl'], $f['maxr']);
+    }
     return $sForums;
 }
 
@@ -256,8 +270,9 @@ function sForums($parent,$loguserid, $boardlol='') {
  *
  * @Da Gabriele: ho spostato questo commento dalla riga 328, per via della issue mia circa le funzioni lunghe
  */
-function makeForumListing($parent, $usergroups, $boardlol='') {
-
+function makeForumListing($parent,$boardlol='', $usergroups=null) {
+    if(!isset($usergroups))
+        return;
     $viewableforums = ForumsWithPermission('forum.viewforum');
     $viewhidden = HasPermission('user.viewhiddenforums');
     $rFora = rForaQuery($parent, $viewableforums, $viewhidden,$boardlol);
@@ -356,8 +371,9 @@ RenderTemplate('forumlist1', ['categories' => $categories]);
 }
 
 
-function makeThreadListing($threads, $pagelinks,$loguserid, $loguser, $misc, $dostickies = true, $showforum = false) {
-
+function makeThreadListing($threads, $pagelinks, $misc=null,$loguserid=null, $loguser=null, $dostickies = true, $showforum = false) {
+    if(!isset($loguserid) || !isset($loguser) || !isset($misc))
+        return;
 	$threadlist = [];
 	while ($thread = Fetch($threads)) {
 		$tdata = ['id' => $thread['id']];
@@ -451,9 +467,9 @@ function makeThreadListing($threads, $pagelinks,$loguserid, $loguser, $misc, $do
 	RenderTemplate('threadlist', ['threads' => $threadlist, 'pagelinks' => $pagelinks, 'dostickies' => $dostickies, 'showforum' => $showforum]);
 }
 
-function makeAnncBar($loguserid) {
-
-
+function makeAnncBar($loguserid=null) {
+    if(!isset($loguserid))
+        return;
 	$anncforum = Settings::get('anncForum');
 	if ($anncforum > 0) {
 		$annc = Query('	SELECT
@@ -489,8 +505,9 @@ function makeAnncBar($loguserid) {
 	}
 }
 
-function DoSmileyBar($smiliesOrdered) {
-
+function DoSmileyBar($smiliesOrdered=null) {
+    if(!isset($smiliesOrdered))
+        return;
 	$expandAt = 100;
 	LoadSmiliesOrdered();
 
@@ -549,7 +566,7 @@ function DoPostHelp() {
 				[user=##] &mdash; '.__('link to users profile by ID').' <br />
 	');
 	//$bucket = 'postHelpLinks';
-	include('./lib/pluginloader.php');
+	include './lib/pluginloader.php';
 
 	write('
 				<br />
@@ -565,7 +582,7 @@ function DoPostHelp() {
 				<h4>'.__('Embeds').'</h4>
 	');
 	//$bucket = 'postHelpEmbeds';
-    include('./lib/pluginloader.php');
+    include './lib/pluginloader.php';
 	write('
 			</div>
 			<br />
